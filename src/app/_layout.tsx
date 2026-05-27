@@ -1,16 +1,29 @@
-import { DarkTheme, DefaultTheme, ThemeProvider, Stack } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import {
+  Raleway_400Regular,
+  Raleway_600SemiBold,
+  Raleway_700Bold,
+  useFonts,
+} from "@expo-google-fonts/raleway";
+import { Stack } from "expo-router";
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
+export default function Layout() {
+  const [loaded] = useFonts({
+    Raleway_400Regular,
+    Raleway_600SemiBold,
+    Raleway_700Bold,
+  });
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  if (!loaded) return null;
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-      </Stack>
-    </ThemeProvider>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        animation: "fade",
+        contentStyle: {
+          backgroundColor: "#000",
+        },
+      }}
+    />
   );
 }
