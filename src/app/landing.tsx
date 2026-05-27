@@ -9,12 +9,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { router } from "expo-router";
+
 import Animated, {
   FadeIn,
   FadeInDown,
 } from "react-native-reanimated";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 const podcasts = [
   {
@@ -88,15 +90,15 @@ export default function Landing() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* BACKGROUND */}
+      {/* Background */}
       <LinearGradient
         colors={["#000000", "#060606", "#000000"]}
-        style={StyleSheet.absoluteFill}
+        style={styles.absoluteFill}
       />
 
-      {/* Purple Ambient Glow */}
-      <View style={styles.purpleGlowTop} />
-      <View style={styles.purpleGlowBottom} />
+      {/* Ambient Purple Glows */}
+      <View style={styles.glowTop} />
+      <View style={styles.glowBottom} />
 
       {/* Noise Overlay */}
       <View style={styles.noiseOverlay} />
@@ -109,6 +111,7 @@ export default function Landing() {
           style={[
             styles.podcastWrapper,
             {
+              position: "absolute",
               top: podcast.top,
               bottom: podcast.bottom,
               left: podcast.left,
@@ -131,20 +134,20 @@ export default function Landing() {
           {/* Glass Overlay */}
           <LinearGradient
             colors={[
-              "rgba(255,255,255,0.02)",
+              "rgba(255,255,255,0.03)",
               "rgba(255,255,255,0)",
             ]}
-            style={styles.cardOverlay}
+            style={styles.absoluteFill}
           />
         </Animated.View>
       ))}
 
-      {/* CENTER CONTENT */}
-      <View style={styles.content}>
-        {/* CENTER GLOW */}
+      {/* Main Content */}
+      <View style={styles.mainContent}>
+        {/* Center Ambient Glow */}
         <View style={styles.centerGlow} />
 
-        {/* LOGO */}
+        {/* Logo */}
         <Animated.View entering={FadeInDown.duration(700)}>
           <BlurView
             intensity={40}
@@ -156,22 +159,24 @@ export default function Landing() {
                 "rgba(255,255,255,0.08)",
                 "rgba(255,255,255,0.02)",
               ]}
-              style={styles.logoGradient}
+              style={styles.absoluteFill}
             />
 
-            <Text style={styles.logoText}>P</Text>
+            <Text style={styles.logoText}>
+              P
+            </Text>
           </BlurView>
         </Animated.View>
 
-        {/* TITLE */}
+        {/* Brand */}
         <Animated.Text
           entering={FadeInDown.delay(120).duration(700)}
-          style={styles.title}
+          style={styles.brandText}
         >
           PODEX
         </Animated.Text>
 
-        {/* TAGLINE */}
+        {/* Tagline */}
         <Animated.View
           entering={FadeInDown.delay(220).duration(700)}
           style={styles.taglineContainer}
@@ -185,43 +190,88 @@ export default function Landing() {
           </Text>
         </Animated.View>
 
-        {/* BUTTONS */}
+        {/* Buttons */}
         <Animated.View
           entering={FadeInDown.delay(320).duration(700)}
           style={styles.buttonsContainer}
         >
-          {/* GOOGLE */}
-          <TouchableOpacity activeOpacity={0.85}>
+          {/* Google Button */}
+          <TouchableOpacity
+            activeOpacity={0.88}
+            style={styles.buttonTouchable}
+          >
             <BlurView
-              intensity={30}
+              intensity={35}
               tint="dark"
-              style={styles.button}
+              style={styles.buttonBlur}
             >
-              <View style={styles.buttonInnerGlow} />
+              {/* Purple Ambient Glow */}
+              <View style={styles.buttonAmbientGlow} />
 
-              <Text style={styles.buttonIcon}>G</Text>
+              {/* Top Highlight */}
+              <LinearGradient
+                colors={[
+                  "rgba(255,255,255,0.10)",
+                  "rgba(255,255,255,0)",
+                ]}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={styles.absoluteFill}
+              />
 
+              {/* Icon */}
+              <View style={styles.buttonIconContainer}>
+                <Text style={styles.buttonIconText}>
+                  G
+                </Text>
+              </View>
+
+              {/* Divider */}
               <View style={styles.buttonDivider} />
 
+              {/* Text */}
               <Text style={styles.buttonText}>
                 CONTINUE WITH GOOGLE
               </Text>
             </BlurView>
           </TouchableOpacity>
 
-          {/* EMAIL */}
-          <TouchableOpacity activeOpacity={0.85}>
+          {/* Email Button */}
+          <TouchableOpacity
+            activeOpacity={0.88}
+            onPress={() => router.push("/auth/login" as any)}
+            style={styles.buttonTouchable}
+          >
             <BlurView
-              intensity={30}
+              intensity={35}
               tint="dark"
-              style={styles.button}
+              style={styles.buttonBlur}
             >
-              <View style={styles.buttonInnerGlow} />
+              {/* Purple Ambient Glow */}
+              <View style={styles.buttonAmbientGlow} />
 
-              <Text style={styles.buttonIcon}>✉</Text>
+              {/* Top Highlight */}
+              <LinearGradient
+                colors={[
+                  "rgba(255,255,255,0.10)",
+                  "rgba(255,255,255,0)",
+                ]}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={styles.absoluteFill}
+              />
 
+              {/* Icon */}
+              <View style={styles.buttonIconContainer}>
+                <Text style={styles.buttonIconText}>
+                  ✉
+                </Text>
+              </View>
+
+              {/* Divider */}
               <View style={styles.buttonDivider} />
 
+              {/* Text */}
               <Text style={styles.buttonText}>
                 CONTINUE WITH EMAIL
               </Text>
@@ -229,17 +279,17 @@ export default function Landing() {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* FOOTER */}
+        {/* Footer */}
         <Animated.Text
           entering={FadeIn.delay(700)}
-          style={styles.footer}
+          style={styles.footerText}
         >
           By continuing, you agree to our{" "}
-          <Text style={styles.footerLink}>
+          <Text style={styles.footerHighlight}>
             Terms of Service
           </Text>{" "}
           and{" "}
-          <Text style={styles.footerLink}>
+          <Text style={styles.footerHighlight}>
             Privacy Policy
           </Text>
         </Animated.Text>
@@ -253,62 +303,58 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#000",
   },
-
-  purpleGlowTop: {
+  absoluteFill: {
     position: "absolute",
-    width: 320,
-    height: 320,
-    borderRadius: 999,
-    backgroundColor: "#6d5dfc",
-    opacity: 0.12,
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
+  glowTop: {
+    position: "absolute",
     top: -100,
     right: -120,
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    backgroundColor: "rgba(109, 93, 252, 0.1)",
   },
-
-  purpleGlowBottom: {
+  glowBottom: {
     position: "absolute",
-    width: 260,
-    height: 260,
-    borderRadius: 999,
-    backgroundColor: "#8b5cf6",
-    opacity: 0.08,
     bottom: 80,
     left: -100,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: "rgba(139, 92, 246, 0.1)",
   },
-
   noiseOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(255,255,255,0.01)",
-  },
-
-  podcastWrapper: {
     position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255, 255, 255, 0.01)",
+  },
+  podcastWrapper: {
     borderRadius: 22,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.04)",
+    borderColor: "rgba(255, 255, 255, 0.04)",
   },
-
-  cardOverlay: {
-    ...StyleSheet.absoluteFill,
-  },
-
-  content: {
+  mainContent: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 32,
   },
-
   centerGlow: {
     position: "absolute",
     width: 240,
     height: 240,
-    borderRadius: 999,
-    backgroundColor: "#ffffff",
-    opacity: 0.03,
+    borderRadius: 120,
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
   },
-
   logoContainer: {
     width: 95,
     height: 95,
@@ -317,96 +363,85 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "rgba(255,255,255,0.03)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
   },
-
-  logoGradient: {
-    ...StyleSheet.absoluteFill,
-  },
-
   logoText: {
     color: "#fff",
     fontSize: 48,
     fontFamily: "Raleway_700Bold",
   },
-
-  title: {
+  brandText: {
     color: "#fff",
     fontSize: 40,
     letterSpacing: 10,
     marginTop: 28,
     fontFamily: "Raleway_700Bold",
   },
-
   taglineContainer: {
     alignItems: "center",
     marginTop: 28,
   },
-
   taglineSub: {
     color: "#8e8e8e",
     fontSize: 18,
     fontFamily: "Raleway_400Regular",
   },
-
   taglineMain: {
     color: "#fff",
     fontSize: 21,
     marginTop: 6,
     fontFamily: "Raleway_700Bold",
   },
-
   buttonsContainer: {
     width: "100%",
     marginTop: 70,
     gap: 18,
   },
-
-  button: {
-    height: 66,
+  buttonTouchable: {
     borderRadius: 20,
     overflow: "hidden",
+  },
+  buttonBlur: {
+    height: 66,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "rgba(255,255,255,0.02)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: "rgba(255, 255, 255, 0.02)",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
-
-  buttonInnerGlow: {
+  buttonAmbientGlow: {
     position: "absolute",
-    width: 200,
-    height: 80,
-    backgroundColor: "#8b5cf6",
-    opacity: 0.04,
-    borderRadius: 999,
+    width: 220,
+    height: 90,
+    borderRadius: 110,
+    backgroundColor: "rgba(139, 92, 246, 0.04)",
   },
-
-  buttonIcon: {
+  buttonIconContainer: {
+    width: 52,
+    alignItems: "center",
+  },
+  buttonIconText: {
     color: "#fff",
     fontSize: 22,
-    width: 50,
-    textAlign: "center",
     fontFamily: "Raleway_700Bold",
   },
-
   buttonDivider: {
     width: 1,
     height: 26,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
     marginRight: 18,
   },
-
   buttonText: {
     color: "#fff",
     fontSize: 14,
     letterSpacing: 2,
     fontFamily: "Raleway_600SemiBold",
   },
-
-  footer: {
+  footerText: {
     position: "absolute",
     bottom: 40,
     color: "#686868",
@@ -416,8 +451,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontFamily: "Raleway_400Regular",
   },
-
-  footerLink: {
+  footerHighlight: {
     color: "#bdbdbd",
   },
 });

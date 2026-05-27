@@ -1,3 +1,5 @@
+import "../global.css";
+
 import {
   Raleway_400Regular,
   Raleway_600SemiBold,
@@ -19,7 +21,6 @@ export default function Layout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        animation: "fade",
         contentStyle: {
           backgroundColor: "#000",
         },
