@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import { useState } from "react";
 import {
   Dimensions,
   KeyboardAvoidingView,
@@ -11,9 +14,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -29,6 +29,9 @@ export default function Login() {
   const handleLogin = () => {
     // Auth login logic placeholder
     console.log("Login with email:", email);
+    // redirect to user/selection.tsx page 
+    router.push("/user/selection")
+    
   };
 
   return (
@@ -133,6 +136,7 @@ export default function Login() {
 
               {/* Sign In Button */}
               <TouchableOpacity
+
                 onPress={handleLogin}
                 activeOpacity={0.88}
                 style={styles.submitButtonContainer}
