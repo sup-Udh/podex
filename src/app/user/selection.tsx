@@ -16,6 +16,8 @@ import {
 import Animated, {
     FadeIn,
     FadeInDown,
+    useAnimatedStyle,
+    withTiming,
 } from "react-native-reanimated";
 
 import { getTrendingPodcasts } from "../../services/podcast";
@@ -35,46 +37,58 @@ export default function PodcastSelection() {
     try {
       const data = await getTrendingPodcasts();
 
-      // Remove duplicates
       const unique = data.filter(
         (podcast: any, index: number, self: any[]) =>
-          index ===
-          self.findIndex(
-            (p) =>
-              p.collectionName ===
-              podcast.collectionName
-          )
+          index === self.findIndex((p) => p.collectionName === podcast.collectionName)
       );
-
-      setPodcasts(unique.slice(0, 20));
+      setPodcasts(unique.slice(0, 30));
     } catch (error) {
       console.log(error);
-    } finally {
-      setLoading(false);
     }
   };
 
   const togglePodcast = (id: number) => {
     if (selected.includes(id)) {
-      setSelected(
-        selected.filter((item) => item !== id)
-      );
+      setSelected(selected.filter((item) => item !== id));
     } else {
       setSelected([...selected, id]);
     }
   };
 
+  const isReady = selected.length >= 5;
+
+  const backgroundOverlayStyle = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming(isReady ? 0.75 : 0, { duration: 500 }),
+    };
+  });
+
+  const buttonGlowStyle = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming(isReady ? 1 : 0, { duration: 500 }),
+    };
+  });
+
+  const buttonVisibilityStyle = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming(isReady ? 1 : 0, { duration: 400 }),
+      transform: [
+        { translateY: withTiming(isReady ? 0 : 20, { duration: 400 }) }
+      ],
+    };
+  });
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* Background */}
+      {/* Base Background */}
       <LinearGradient
         colors={["#000000", "#050505", "#000000"]}
         style={styles.absoluteFill}
       />
 
-      {/* Ambient Purple Glows */}
+      {/* Ambient Purple Glow */}
       <View style={styles.glowTop} />
       <View style={styles.glowBottom} />
 
@@ -85,6 +99,12 @@ export default function PodcastSelection() {
       <View style={styles.particle1} />
       <View style={styles.particle2} />
       <View style={styles.particle3} />
+
+      {/* Darkening Overlay when ready */}
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.absoluteFill, { backgroundColor: "#000" }, backgroundOverlayStyle]}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -100,8 +120,7 @@ export default function PodcastSelection() {
           </Text>
 
           <Text style={styles.headingSubtitle}>
-            Select at least 5 to personalize{"\n"}
-            your experience
+            Select at least 5 to personalize{"\n"}your experience
           </Text>
         </Animated.View>
 
@@ -111,76 +130,51 @@ export default function PodcastSelection() {
           style={styles.gridContainer}
         >
           {podcasts.map((podcast, index) => {
-            const podcastId =
-              podcast.collectionId || index;
-
-            const isSelected =
-              selected.includes(podcastId);
-
+            const isSelected = selected.includes(podcast.collectionId);
             const itemSize = (width - 60) / 2;
 
             return (
               <TouchableOpacity
-                key={podcastId}
+                key={podcast.collectionId}
                 activeOpacity={0.88}
-                onPress={() =>
-                  togglePodcast(podcastId)
-                }
+                onPress={() => togglePodcast(podcast.collectionId)}
                 style={styles.gridItemWrapper}
               >
                 <Animated.View
-                  entering={FadeIn.delay(index * 70)}
+                  entering={FadeIn.delay((index % 10) * 70)}
                   style={[
                     styles.gridItem,
-                    {
-                      width: itemSize,
-                      height: itemSize,
-                    },
-                    isSelected
-                      ? styles.gridItemSelected
-                      : styles.gridItemUnselected,
+                    { width: itemSize, height: itemSize },
+                    isSelected ? styles.gridItemSelected : styles.gridItemUnselected
                   ]}
                 >
                   {/* Artwork */}
                   <Image
-                    source={
-                      podcast.artworkUrl600 ||
-                      podcast.artworkUrl100
-                    }
-                    contentFit="cover"
-                    transition={300}
+                    source={{ uri: podcast.artworkUrl600 || podcast.artworkUrl100 }}
+                    resizeMode="cover"
                     style={styles.artwork}
                   />
 
-                  {/* Selected State */}
+                  {/* Selected Glow */}
                   {isSelected && (
                     <>
-                      <View
-                        style={styles.selectedOverlay}
-                      />
+                      <View style={styles.selectedOverlay} />
+                      <View style={styles.selectedBorder} />
 
-                      <View
-                        style={styles.selectedBorder}
-                      />
-
+                      {/* Check */}
                       <BlurView
                         intensity={50}
                         tint="dark"
                         style={styles.checkContainer}
                       >
-                        <Text style={styles.checkText}>
-                          ✓
-                        </Text>
+                        <Text style={styles.checkText}>✓</Text>
                       </BlurView>
                     </>
                   )}
 
                   {/* Bottom Gradient */}
                   <LinearGradient
-                    colors={[
-                      "transparent",
-                      "rgba(0,0,0,0.88)",
-                    ]}
+                    colors={["transparent", "rgba(0,0,0,0.8)"]}
                     style={styles.bottomGradient}
                   />
 
@@ -192,13 +186,6 @@ export default function PodcastSelection() {
                     >
                       {podcast.collectionName}
                     </Text>
-
-                    <Text
-                      numberOfLines={1}
-                      style={styles.authorText}
-                    >
-                      {podcast.artistName}
-                    </Text>
                   </View>
                 </Animated.View>
               </TouchableOpacity>
@@ -207,57 +194,49 @@ export default function PodcastSelection() {
         </Animated.View>
       </ScrollView>
 
-      {/* Continue Button */}
-      <View style={styles.bottomContinueContainer}>
+      {/* Bottom Continue */}
+      <Animated.View 
+        style={[styles.bottomContinueContainer, buttonVisibilityStyle]}
+        pointerEvents={isReady ? "auto" : "none"}
+      >
         <TouchableOpacity
-          activeOpacity={0.9}
-          disabled={selected.length < 5}
+          activeOpacity={0.88}
+          disabled={!isReady}
           style={styles.continueButtonWrapper}
         >
           <BlurView
-            intensity={45}
+            intensity={40}
             tint="dark"
             style={[
               styles.continueButtonBlur,
-              selected.length >= 5
-                ? styles.continueButtonReady
-                : styles.continueButtonDisabled,
+              isReady ? styles.continueButtonReady : styles.continueButtonDisabled
             ]}
           >
-            {/* Ambient Glow */}
-            <View
-              style={[
-                styles.continueButtonGlow,
-                selected.length >= 5
-                  ? styles.glowReady
-                  : styles.glowDisabled,
-              ]}
+            {/* Base Inner Glow for disabled */}
+            {!isReady && <View style={[styles.continueButtonGlow, styles.glowDisabled]} />}
+            
+            {/* Animated Super Bright Glow for ready */}
+            <Animated.View
+              style={[styles.continueButtonGlow, styles.glowReady, buttonGlowStyle]}
             />
 
-            {/* Glass Highlight */}
+            {/* Gradient Mask */}
             <LinearGradient
-              colors={[
-                "rgba(255,255,255,0.14)",
-                "rgba(255,255,255,0)",
-              ]}
-              start={{ x: 0.5, y: 0 }}
-              end={{ x: 0.5, y: 1 }}
+              colors={["rgba(255,255,255,0.10)", "rgba(255,255,255,0)"]}
               style={styles.absoluteFill}
             />
 
             <Text
               style={[
                 styles.continueButtonText,
-                selected.length >= 5
-                  ? styles.textReady
-                  : styles.textDisabled,
+                isReady ? styles.textReady : styles.textDisabled
               ]}
             >
               Continue
             </Text>
           </BlurView>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -267,7 +246,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#000",
   },
-
   absoluteFill: {
     position: "absolute",
     left: 0,
@@ -275,7 +253,6 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
   },
-
   glowTop: {
     position: "absolute",
     top: -120,
@@ -283,10 +260,8 @@ const styles = StyleSheet.create({
     width: 320,
     height: 320,
     borderRadius: 160,
-    backgroundColor:
-      "rgba(109,93,252,0.10)",
+    backgroundColor: "rgba(109, 93, 252, 0.1)",
   },
-
   glowBottom: {
     position: "absolute",
     bottom: 100,
@@ -294,20 +269,16 @@ const styles = StyleSheet.create({
     width: 280,
     height: 280,
     borderRadius: 140,
-    backgroundColor:
-      "rgba(139,92,246,0.10)",
+    backgroundColor: "rgba(139, 92, 246, 0.1)",
   },
-
   noiseOverlay: {
     position: "absolute",
     left: 0,
     right: 0,
     top: 0,
     bottom: 0,
-    backgroundColor:
-      "rgba(255,255,255,0.01)",
+    backgroundColor: "rgba(255, 255, 255, 0.01)",
   },
-
   particle1: {
     position: "absolute",
     top: 140,
@@ -315,10 +286,8 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor:
-      "rgba(255,255,255,0.10)",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
-
   particle2: {
     position: "absolute",
     top: 240,
@@ -326,10 +295,8 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor:
-      "rgba(255,255,255,0.10)",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
-
   particle3: {
     position: "absolute",
     bottom: 220,
@@ -337,20 +304,16 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor:
-      "rgba(255,255,255,0.10)",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
-
   scrollContent: {
     paddingTop: 110,
-    paddingBottom: 180,
+    paddingBottom: 140,
     paddingHorizontal: 22,
   },
-
   headingContainer: {
     alignItems: "center",
   },
-
   headingTitle: {
     color: "#fff",
     fontSize: 40,
@@ -358,7 +321,6 @@ const styles = StyleSheet.create({
     lineHeight: 46,
     fontFamily: "Raleway_700Bold",
   },
-
   headingSubtitle: {
     color: "#8d8d8d",
     fontSize: 16,
@@ -366,51 +328,42 @@ const styles = StyleSheet.create({
     marginTop: 16,
     lineHeight: 24,
     fontFamily: "Raleway_400Regular",
-  },
+    fontWeight: "bold",
 
+  },
   gridContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     marginTop: 48,
   },
-
   gridItemWrapper: {
     marginBottom: 20,
   },
-
   gridItem: {
     position: "relative",
     borderRadius: 28,
     overflow: "hidden",
     borderWidth: 1,
-    backgroundColor: "#121212",
   },
-
   gridItemSelected: {
     borderColor: "#8b5cf6",
   },
-
   gridItemUnselected: {
-    borderColor:
-      "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255, 255, 255, 0.06)",
   },
-
   artwork: {
     width: "100%",
     height: "100%",
   },
-
   selectedOverlay: {
     position: "absolute",
     left: 0,
     right: 0,
     top: 0,
     bottom: 0,
-    backgroundColor:
-      "rgba(139,92,246,0.16)",
+    backgroundColor: "rgba(139, 92, 246, 0.15)",
   },
-
   selectedBorder: {
     position: "absolute",
     left: 0,
@@ -421,7 +374,6 @@ const styles = StyleSheet.create({
     borderColor: "#8b5cf6",
     borderRadius: 28,
   },
-
   checkContainer: {
     position: "absolute",
     top: 12,
@@ -433,57 +385,47 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor:
-      "rgba(255,255,255,0.10)",
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
-
   checkText: {
     color: "#fff",
     fontSize: 15,
     fontFamily: "Raleway_700Bold",
   },
-
   bottomGradient: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    height: 110,
+    height: 90,
   },
-
   titleContainer: {
     position: "absolute",
     bottom: 16,
     left: 16,
     right: 16,
   },
-
   titleText: {
     color: "#fff",
     fontSize: 16,
     lineHeight: 20,
     fontFamily: "Raleway_700Bold",
   },
-
-  authorText: {
-    color: "#a1a1a1",
-    fontSize: 12,
-    marginTop: 4,
-    fontFamily: "Raleway_400Regular",
-  },
-
   bottomContinueContainer: {
     position: "absolute",
     bottom: 40,
     left: 24,
     right: 24,
   },
-
   continueButtonWrapper: {
     borderRadius: 24,
     overflow: "hidden",
+    shadowColor: "#8b5cf6",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
   },
-
   continueButtonBlur: {
     height: 68,
     borderRadius: 24,
@@ -491,48 +433,38 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor:
-      "rgba(255,255,255,0.02)",
   },
-
   continueButtonReady: {
-    borderColor:
-      "rgba(255,255,255,0.08)",
+    borderColor: "rgba(139, 92, 246, 0.8)",
+    backgroundColor: "rgba(139, 92, 246, 0.15)",
   },
-
   continueButtonDisabled: {
-    borderColor:
-      "rgba(255,255,255,0.04)",
+    borderColor: "rgba(255, 255, 255, 0.04)",
   },
-
   continueButtonGlow: {
     position: "absolute",
     left: 0,
     right: 0,
     top: 0,
     bottom: 0,
-    opacity: 0.9,
   },
-
   glowReady: {
-    backgroundColor:
-      "rgba(139,92,246,0.06)",
+    backgroundColor: "rgba(139, 92, 246, 0.5)",
   },
-
   glowDisabled: {
     backgroundColor: "transparent",
   },
-
   continueButtonText: {
-    fontSize: 16,
-    letterSpacing: 1,
+    fontSize: 18,
+    letterSpacing: 1.5,
     fontFamily: "Raleway_700Bold",
   },
-
   textReady: {
     color: "#fff",
+    textShadowColor: "rgba(139, 92, 246, 0.8)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
-
   textDisabled: {
     color: "#6f6f6f",
   },
