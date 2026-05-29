@@ -55,7 +55,6 @@ export default function ProfileScreen() {
             
             <View style={styles.settingsGroup}>
               <TouchableOpacity style={styles.settingsItem}>
-                <Text style={styles.settingsIcon}>🧠</Text>
                 <View style={styles.settingsItemContent}>
                   <Text style={styles.settingsItemTitle}>AI Curation Preferences</Text>
                   <Text style={styles.settingsItemSub}>Tune your Second Brain models</Text>
@@ -66,7 +65,6 @@ export default function ProfileScreen() {
               <View style={styles.divider} />
 
               <TouchableOpacity style={styles.settingsItem}>
-                <Text style={styles.settingsIcon}>⬇️</Text>
                 <View style={styles.settingsItemContent}>
                   <Text style={styles.settingsItemTitle}>Export Knowledge Base</Text>
                   <Text style={styles.settingsItemSub}>Download as CSV or Markdown</Text>
@@ -80,40 +78,12 @@ export default function ProfileScreen() {
             </View>
           </Animated.View>
 
-          {/* Section C: App Preferences */}
-          <Animated.View entering={FadeInDown.delay(300).duration(600)} style={styles.section}>
-            <Text style={styles.sectionTitle}>App Preferences</Text>
-            
-            <View style={styles.settingsGroup}>
-              <TouchableOpacity style={styles.settingsItem}>
-                <Text style={styles.settingsIcon}>🎧</Text>
-                <View style={styles.settingsItemContent}>
-                  <Text style={styles.settingsItemTitle}>Audio Quality</Text>
-                  <Text style={styles.settingsItemSub}>Lossless Enabled</Text>
-                </View>
-                <Text style={styles.chevron}>❯</Text>
-              </TouchableOpacity>
-              
-              <View style={styles.divider} />
-
-              <TouchableOpacity style={styles.settingsItem}>
-                <Text style={styles.settingsIcon}>🔔</Text>
-                <View style={styles.settingsItemContent}>
-                  <Text style={styles.settingsItemTitle}>Notifications</Text>
-                  <Text style={styles.settingsItemSub}>Push & Email alerts</Text>
-                </View>
-                <Text style={styles.chevron}>❯</Text>
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
-
           {/* Section D: Danger Zone */}
           <Animated.View entering={FadeInDown.delay(400).duration(600)} style={styles.section}>
             <Text style={styles.sectionTitleDanger}>Danger Zone</Text>
             
             <View style={styles.dangerGroup}>
               <TouchableOpacity style={styles.dangerItem}>
-                <Text style={styles.dangerIcon}>🧹</Text>
                 <View style={styles.settingsItemContent}>
                   <Text style={styles.dangerItemTitle}>Clear AI Data & History</Text>
                   <Text style={styles.dangerItemSub}>Wipe your search and extraction history</Text>
@@ -123,7 +93,6 @@ export default function ProfileScreen() {
               <View style={styles.dangerDivider} />
 
               <TouchableOpacity style={styles.dangerItem}>
-                <Text style={styles.dangerIcon}>⚠️</Text>
                 <View style={styles.settingsItemContent}>
                   <Text style={styles.dangerItemTitle}>Delete Account</Text>
                   <Text style={styles.dangerItemSub}>Permanently delete your profile and data</Text>
