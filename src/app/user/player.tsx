@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dimensions,
   ScrollView,
@@ -9,6 +9,8 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Modal,
+  TouchableWithoutFeedback,
 } from "react-native";
 import Animated, {
   FadeInDown,
@@ -23,6 +25,7 @@ const { width } = Dimensions.get("window");
 
 export default function PlayerScreen() {
   const router = useRouter();
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
 
   // Pulse animation for the "AI is Listening" indicator
   const pulseAnim = useSharedValue(0.4);
@@ -63,7 +66,7 @@ export default function PlayerScreen() {
           <Text style={styles.logoText}>P</Text>
         </View>
 
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => setIsMenuVisible(true)}>
           <Text style={styles.iconText}>⋮</Text>
         </TouchableOpacity>
       </View>
@@ -126,41 +129,73 @@ export default function PlayerScreen() {
 
           <View style={styles.liveFeedContainer}>
             {/* Feed Item 1 */}
-            <View style={styles.feedItem}>
-              <View style={styles.feedIconBox}>
-                <Text style={styles.feedIcon}>📚</Text>
-              </View>
-              <View style={styles.feedContent}>
-                <Text style={styles.feedType}>BOOK RECOMMENDED • Just now</Text>
-                <Text style={styles.feedTitle}>Outlive: The Science and Art of Longevity</Text>
-              </View>
+            <View style={styles.logItem}>
+              <Text style={styles.logText}>
+                <Text style={styles.logTimestamp}>[00:00:12]</Text> <Text style={styles.logType}>[EXTRACT_BOOK]</Text> Outlive: The Science and Art of Longevity
+              </Text>
             </View>
 
             {/* Feed Item 2 */}
-            <View style={styles.feedItem}>
-              <View style={[styles.feedIconBox, { backgroundColor: "rgba(59, 130, 246, 0.15)" }]}>
-                <Text style={styles.feedIcon}>🧠</Text>
-              </View>
-              <View style={styles.feedContent}>
-                <Text style={[styles.feedType, { color: "#60a5fa" }]}>FRAMEWORK EXTRACTED • 2m ago</Text>
-                <Text style={styles.feedTitle}>Centenarian Decathlon Protocol</Text>
-              </View>
+            <View style={styles.logItem}>
+              <Text style={styles.logText}>
+                <Text style={styles.logTimestamp}>[00:02:45]</Text> <Text style={styles.logTypeInfo}>[EXTRACT_FRAMEWORK]</Text> Centenarian Decathlon Protocol
+              </Text>
             </View>
 
             {/* Feed Item 3 */}
-            <View style={styles.feedItem}>
-              <View style={[styles.feedIconBox, { backgroundColor: "rgba(16, 185, 129, 0.15)" }]}>
-                <Text style={styles.feedIcon}>💊</Text>
-              </View>
-              <View style={styles.feedContent}>
-                <Text style={[styles.feedType, { color: "#34d399" }]}>SUPPLEMENT MENTIONED • 15m ago</Text>
-                <Text style={styles.feedTitle}>Omega-3 EPA at 2g/day</Text>
-              </View>
+            <View style={styles.logItem}>
+              <Text style={styles.logText}>
+                <Text style={styles.logTimestamp}>[00:15:30]</Text> <Text style={styles.logTypeSuccess}>[EXTRACT_SUPPLEMENT]</Text> Omega-3 EPA at 2g/day
+              </Text>
             </View>
           </View>
         </Animated.View>
 
       </ScrollView>
+
+      {/* Options Menu Modal */}
+      <Modal
+        visible={isMenuVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsMenuVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setIsMenuVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.menuContainer}>
+                <Text style={styles.menuTitle}>Options</Text>
+                
+                <TouchableOpacity style={styles.menuItem} onPress={() => setIsMenuVisible(false)}>
+                  <Text style={styles.menuIcon}>⚠️</Text>
+                  <Text style={styles.menuItemText}>Report Issue</Text>
+                </TouchableOpacity>
+
+                <View style={styles.menuDivider} />
+
+                <TouchableOpacity style={styles.menuItem} onPress={() => setIsMenuVisible(false)}>
+                  <Text style={styles.menuIcon}>📝</Text>
+                  <Text style={styles.menuItemText}>View Full Transcript</Text>
+                </TouchableOpacity>
+
+                <View style={styles.menuDivider} />
+
+                <TouchableOpacity style={styles.menuItem} onPress={() => setIsMenuVisible(false)}>
+                  <Text style={styles.menuIcon}>📥</Text>
+                  <Text style={styles.menuItemText}>Add to Knowledge Queue</Text>
+                </TouchableOpacity>
+
+                <View style={styles.menuDivider} />
+
+                <TouchableOpacity style={styles.menuItem} onPress={() => setIsMenuVisible(false)}>
+                  <Text style={styles.menuIcon}>📤</Text>
+                  <Text style={styles.menuItemText}>Share Snippet</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }
@@ -371,42 +406,75 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
   },
   liveFeedContainer: {
-    gap: 12,
-  },
-  feedItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(20,20,25,0.6)",
+    gap: 8,
+    backgroundColor: "rgba(10,10,15,0.8)",
     padding: 16,
-    borderRadius: 20,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.05)",
   },
-  feedIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: "rgba(139, 92, 246, 0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-  },
-  feedIcon: {
-    fontSize: 16,
-  },
-  feedContent: {
-    flex: 1,
-  },
-  feedType: {
-    color: "#b99eff",
-    fontSize: 10,
-    fontFamily: "Raleway_700Bold",
-    letterSpacing: 0.5,
+  logItem: {
     marginBottom: 4,
   },
-  feedTitle: {
+  logText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 12,
+    fontFamily: "Courier",
+    lineHeight: 18,
+  },
+  logTimestamp: {
+    color: "#666",
+  },
+  logType: {
+    color: "#b99eff",
+  },
+  logTypeInfo: {
+    color: "#60a5fa",
+  },
+  logTypeSuccess: {
+    color: "#34d399",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  menuContainer: {
+    width: "100%",
+    backgroundColor: "rgba(20,20,25,0.95)",
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  menuTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontFamily: "Raleway_700Bold",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  menuIcon: {
+    fontSize: 20,
+    marginRight: 16,
+    width: 28,
+    textAlign: "center",
+  },
+  menuItemText: {
+    color: "#fff",
+    fontSize: 16,
     fontFamily: "Raleway_600SemiBold",
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    marginVertical: 4,
   },
 });
