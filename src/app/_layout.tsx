@@ -8,6 +8,8 @@ import {
 } from "@expo-google-fonts/raleway";
 import { Stack } from "expo-router";
 
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+
 export default function Layout() {
   const [loaded] = useFonts({
     Raleway_400Regular,
@@ -18,13 +20,15 @@ export default function Layout() {
   if (!loaded) return null;
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: {
-          backgroundColor: "#000",
-        },
-      }}
-    />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: {
+            backgroundColor: "#000",
+          },
+        }}
+      />
+    </GestureHandlerRootView>
   );
 }

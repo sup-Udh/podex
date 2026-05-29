@@ -14,12 +14,14 @@ import {
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 import BottomNavbar from "../../components/BottomNavbar";
+import SwipeNavigator from "../../components/SwipeNavigator";
 
 const { width } = Dimensions.get("window");
 
 export default function BrainScreen() {
   return (
-    <View style={styles.container}>
+    <SwipeNavigator>
+      <View style={styles.container}>
       <LinearGradient
         colors={["#000000", "#050014", "#000000"]}
         style={StyleSheet.absoluteFill}
@@ -148,7 +150,8 @@ export default function BrainScreen() {
       </ScrollView>
 
       <BottomNavbar />
-    </View>
+      </View>
+    </SwipeNavigator>
   );
 }
 

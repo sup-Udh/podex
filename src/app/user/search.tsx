@@ -22,6 +22,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import BottomNavbar from "../../components/BottomNavbar";
+import SwipeNavigator from "../../components/SwipeNavigator";
 
 const { width } = Dimensions.get("window");
 
@@ -51,7 +52,7 @@ const Particle = ({ delay, startX, startY, endX, endY, size, opacity }: any) => 
     scale.value = withDelay(
       delay,
       withRepeat(
-        withSequence(
+        withSequence(ges
           withTiming(1.2, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
           withTiming(0.8, { duration: 2000, easing: Easing.inOut(Easing.ease) })
         ),
@@ -110,7 +111,8 @@ const ParticleBackground = () => {
 
 export default function SearchScreen() {
   return (
-    <View style={styles.container}>
+    <SwipeNavigator>
+      <View style={styles.container}>
       <LinearGradient
         colors={["#000000", "#050014", "#000000"]}
         style={StyleSheet.absoluteFill}
@@ -231,7 +233,8 @@ export default function SearchScreen() {
       </ScrollView>
 
       <BottomNavbar />
-    </View>
+      </View>
+    </SwipeNavigator>
   );
 }
 

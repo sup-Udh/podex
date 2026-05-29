@@ -49,7 +49,7 @@ export default function BottomNavbar() {
 
       <TouchableOpacity 
         style={[styles.iconContainer, isRouteActive("/user/library") && styles.activeIconGlow]} 
-        onPress={() => {}}
+        onPress={() => router.push("/user/library" as any)}
       >
         <Library size={20} color={getIconColor("/user/library")} />
       </TouchableOpacity>
