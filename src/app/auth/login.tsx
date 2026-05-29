@@ -30,7 +30,7 @@ export default function Login() {
     // Auth login logic placeholder
     console.log("Login with email:", email);
     // redirect to user/selection.tsx page 
-    router.push("/user/selection")
+    router.push("/onboarding/selection")
     
   };
 

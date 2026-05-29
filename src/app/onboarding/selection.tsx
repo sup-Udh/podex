@@ -71,11 +71,6 @@ export default function PodcastSelection() {
     }, 800);
   };
 
-  const isCloseToBottom = ({ layoutMeasurement, contentOffset, contentSize }: any) => {
-    const paddingToBottom = 300;
-    return layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
-  };
-
   const isReady = selected.length >= 5;
 
   const backgroundOverlayStyle = useAnimatedStyle(() => {
@@ -130,12 +125,6 @@ export default function PodcastSelection() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
-        onScroll={({ nativeEvent }) => {
-          if (isCloseToBottom(nativeEvent)) {
-            handleLoadMore();
-          }
-        }}
-        scrollEventThrottle={400}
       >
         {/* Heading */}
         <Animated.View
@@ -220,9 +209,20 @@ export default function PodcastSelection() {
           })}
         </Animated.View>
 
-        {loadingMore && (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color="#8b5cf6" />
+        {podcasts.length < allPodcasts.length && allPodcasts.length > 0 && (
+          <View style={styles.loadMoreContainer}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleLoadMore}
+              disabled={loadingMore}
+              style={styles.loadMoreButton}
+            >
+              {loadingMore ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.loadMoreText}>SEE MORE</Text>
+              )}
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -385,11 +385,28 @@ const styles = StyleSheet.create({
   gridItemUnselected: {
     borderColor: "rgba(255, 255, 255, 0.06)",
   },
-  loaderContainer: {
+  loadMoreContainer: {
     width: "100%",
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 10,
     marginBottom: 40,
+  },
+  loadMoreButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 24,
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 160,
+  },
+  loadMoreText: {
+    color: "#fff",
+    fontSize: 13,
+    letterSpacing: 2,
+    fontFamily: "Raleway_700Bold",
   },
   artwork: {
     width: "100%",
