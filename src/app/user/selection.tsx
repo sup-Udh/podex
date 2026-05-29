@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
 
 import {
+    ActivityIndicator,
     Dimensions,
     ScrollView,
     StatusBar,
@@ -26,8 +27,10 @@ const { width } = Dimensions.get("window");
 
 export default function PodcastSelection() {
   const [selected, setSelected] = useState<number[]>([]);
+  const [allPodcasts, setAllPodcasts] = useState<any[]>([]);
   const [podcasts, setPodcasts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     loadPodcasts();
@@ -41,7 +44,8 @@ export default function PodcastSelection() {
         (podcast: any, index: number, self: any[]) =>
           index === self.findIndex((p) => p.collectionName === podcast.collectionName)
       );
-      setPodcasts(unique.slice(0, 30));
+      setAllPodcasts(unique);
+      setPodcasts(unique.slice(0, 20));
     } catch (error) {
       console.log(error);
     }
@@ -53,6 +57,23 @@ export default function PodcastSelection() {
     } else {
       setSelected([...selected, id]);
     }
+  };
+
+  const handleLoadMore = () => {
+    if (podcasts.length >= allPodcasts.length || loadingMore || allPodcasts.length === 0) return;
+    
+    setLoadingMore(true);
+    setTimeout(() => {
+      const nextPage = page + 1;
+      setPodcasts(allPodcasts.slice(0, nextPage * 20));
+      setPage(nextPage);
+      setLoadingMore(false);
+    }, 800);
+  };
+
+  const isCloseToBottom = ({ layoutMeasurement, contentOffset, contentSize }: any) => {
+    const paddingToBottom = 300;
+    return layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
   };
 
   const isReady = selected.length >= 5;
@@ -109,6 +130,12 @@ export default function PodcastSelection() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        onScroll={({ nativeEvent }) => {
+          if (isCloseToBottom(nativeEvent)) {
+            handleLoadMore();
+          }
+        }}
+        scrollEventThrottle={400}
       >
         {/* Heading */}
         <Animated.View
@@ -192,6 +219,12 @@ export default function PodcastSelection() {
             );
           })}
         </Animated.View>
+
+        {loadingMore && (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color="#8b5cf6" />
+          </View>
+        )}
       </ScrollView>
 
       {/* Bottom Continue */}
@@ -351,6 +384,12 @@ const styles = StyleSheet.create({
   },
   gridItemUnselected: {
     borderColor: "rgba(255, 255, 255, 0.06)",
+  },
+  loaderContainer: {
+    width: "100%",
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 40,
   },
   artwork: {
     width: "100%",
