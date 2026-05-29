@@ -178,11 +178,8 @@ export default function Landing() {
             tint="dark"
             style={styles.logoContainer}
           >
-            <View
-              style={
-                styles.logoHighlight
-              }
-            />
+            <View style={styles.logoHighlight} />
+            <View style={styles.logoGlow} />
 
             <Text style={styles.logoText}>
               P
@@ -490,19 +487,29 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 20,
+    height: "50%",
     backgroundColor:
-      "rgba(255,255,255,0.05)",
+      "rgba(255,255,255,0.1)",
+  },
+
+  logoGlow: {
+    position: "absolute",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "rgba(139, 92, 246, 0.25)",
+    shadowColor: "#8b5cf6",
+    shadowOpacity: 0.8,
+    shadowRadius: 20,
+    elevation: 10,
   },
 
   logoText: {
     color: "#fff",
     fontSize: 48,
-    fontFamily:
-      "Raleway_700Bold",
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 4 },
-    textShadowRadius: 10,
+    fontFamily: "Raleway_700Bold",
+    letterSpacing: 2,
+    zIndex: 1,
   },
 
   brandText: {

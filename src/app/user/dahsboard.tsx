@@ -10,7 +10,6 @@ import {
   View,
 } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { useRouter } from "expo-router";
 
 import BottomNavbar from "../../components/BottomNavbar";
 import SwipeNavigator from "../../components/SwipeNavigator";
@@ -18,7 +17,6 @@ import SwipeNavigator from "../../components/SwipeNavigator";
 const { width } = Dimensions.get("window");
 
 export default function Dashboard() {
-  const router = useRouter();
   return (
     <SwipeNavigator>
       <View style={styles.container}>
@@ -64,7 +62,7 @@ export default function Dashboard() {
               Aggregated from 'The AI Podcast' and 'Lex Fridman'. Key takeaway: Transformers are evolving into liquid neural...
             </Text>
 
-            <TouchableOpacity style={styles.heroButton} activeOpacity={0.8} onPress={() => router.push("/player" as any)}>
+            <TouchableOpacity style={styles.heroButton} activeOpacity={0.8}>
               <LinearGradient colors={["#4b4073", "#2c244b"]} style={StyleSheet.absoluteFill} />
               <Text style={styles.heroButtonIcon}>▶</Text>
               <Text style={styles.heroButtonText}>Listen to Summary</Text>
