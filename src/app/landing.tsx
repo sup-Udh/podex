@@ -156,8 +156,8 @@ export default function Landing() {
 
       {/* Dark Mask for Readability */}
       <LinearGradient
-        colors={["transparent", "rgba(0,0,0,0.65)", "#000000"]}
-        locations={[0.3, 0.65, 1]}
+        colors={["transparent", "rgba(0,0,0,0.85)", "#000000"]}
+        locations={[0.2, 0.55, 1]}
         style={styles.absoluteFill}
         pointerEvents="none"
       />
@@ -507,14 +507,14 @@ const styles = StyleSheet.create({
 
   brandText: {
     color: "#fff",
-    fontSize: 40,
-    letterSpacing: 10,
+    fontSize: 42,
+    letterSpacing: 12,
     marginTop: 28,
     fontFamily:
       "Raleway_700Bold",
-    textShadowColor: "rgba(0,0,0,0.8)",
-    textShadowOffset: { width: 0, height: 6 },
-    textShadowRadius: 16,
+    textShadowColor: "rgba(139,92,246,0.5)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 20,
   },
 
   taglineContainer: {
@@ -560,9 +560,9 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     borderColor:
-      "rgba(255,255,255,0.08)",
+      "rgba(255,255,255,0.15)",
     backgroundColor:
-      "rgba(255,255,255,0.02)",
+      "rgba(255,255,255,0.08)",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -570,12 +570,12 @@ const styles = StyleSheet.create({
 
   buttonGlow: {
     position: "absolute",
-    width: 180,
-    height: 52,
+    width: 200,
+    height: 66,
     borderRadius: 999,
-    opacity: 0.75,
+    opacity: 0,
     backgroundColor:
-      "rgba(139,92,246,0.05)",
+      "transparent",
   },
 
   buttonHighlight: {
