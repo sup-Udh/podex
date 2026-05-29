@@ -1,6 +1,7 @@
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 
 import {
@@ -235,6 +236,7 @@ export default function PodcastSelection() {
         <TouchableOpacity
           activeOpacity={0.88}
           disabled={!isReady}
+          onPress={() => router.push("/user/dahsboard" as any)}
           style={styles.continueButtonWrapper}
         >
           <BlurView
