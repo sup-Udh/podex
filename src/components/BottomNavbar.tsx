@@ -56,7 +56,7 @@ export default function BottomNavbar() {
 
       <TouchableOpacity 
         style={[styles.iconContainer, isRouteActive("/user/profile") && styles.activeIconGlow]} 
-        onPress={() => {}}
+        onPress={() => router.push("/user/profile" as any)}
       >
         <User size={20} color={getIconColor("/user/profile")} />
       </TouchableOpacity>

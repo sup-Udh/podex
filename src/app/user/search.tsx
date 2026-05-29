@@ -1,7 +1,6 @@
 import { BlurView } from "expo-blur";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import {
   Dimensions,
   ScrollView,
@@ -11,14 +10,14 @@ import {
   View,
 } from "react-native";
 import Animated, {
+  Easing,
   FadeInDown,
   useAnimatedStyle,
   useSharedValue,
-  withRepeat,
-  withTiming,
-  withSequence,
-  Easing,
   withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
 } from "react-native-reanimated";
 
 import BottomNavbar from "../../components/BottomNavbar";
@@ -52,7 +51,7 @@ const Particle = ({ delay, startX, startY, endX, endY, size, opacity }: any) => 
     scale.value = withDelay(
       delay,
       withRepeat(
-        withSequence(ges
+        withSequence(
           withTiming(1.2, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
           withTiming(0.8, { duration: 2000, easing: Easing.inOut(Easing.ease) })
         ),

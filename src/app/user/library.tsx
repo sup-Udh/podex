@@ -107,32 +107,28 @@ export default function LibraryScreen() {
           </Animated.View>
 
           {/* Section C: Subscriptions */}
-          <Animated.View entering={FadeInDown.delay(300).duration(600)} style={styles.section}>
-            <Text style={styles.sectionTitle}>Subscriptions</Text>
+          <Animated.View entering={FadeInDown.delay(300).duration(600)} style={[styles.section, { marginBottom: 100 }]}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>Subscriptions</Text>
+              <TouchableOpacity style={styles.addSubscriptionButton}>
+                <Text style={styles.addSubscriptionIcon}>+</Text>
+              </TouchableOpacity>
+            </View>
             
-            <View style={styles.gridContainer}>
+            <View style={styles.listContainer}>
               {subscriptions.map((podcast, i) => (
-                <View key={i} style={styles.gridItem}>
-                  <Image source={{ uri: podcast.artworkUrl600 }} style={styles.gridImage} />
-                  <View style={styles.unreadBadge} />
+                <View key={i} style={styles.listItem}>
+                  <Image source={{ uri: podcast.artworkUrl100 }} style={styles.listImage} />
+                  <View style={styles.listInfo}>
+                    <Text style={styles.listTitle} numberOfLines={1}>{podcast.collectionName}</Text>
+                    <Text style={styles.listSub} numberOfLines={1}>{podcast.artistName}</Text>
+                  </View>
+                  <TouchableOpacity style={styles.listOptionsButton}>
+                    <Text style={styles.listOptionsIcon}>⋮</Text>
+                  </TouchableOpacity>
                 </View>
               ))}
             </View>
-          </Animated.View>
-
-          {/* Section D: Discovery */}
-          <Animated.View entering={FadeInDown.delay(400).duration(600)} style={[styles.section, { marginBottom: 100 }]}>
-            <Text style={styles.sectionTitle}>Expand Your Mind</Text>
-            
-            <TouchableOpacity style={styles.discoveryButton} activeOpacity={0.8}>
-              <Text style={styles.discoveryIcon}>➕</Text>
-              <Text style={styles.discoveryText}>Add via RSS URL</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.discoveryButton, { marginTop: 12 }]} activeOpacity={0.8}>
-              <Text style={styles.discoveryIcon}>🔍</Text>
-              <Text style={styles.discoveryText}>Browse Podex Directory</Text>
-            </TouchableOpacity>
           </Animated.View>
 
         </ScrollView>
@@ -176,14 +172,15 @@ const styles = StyleSheet.create({
   queuePlayButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.05)", alignItems: "center", justifyContent: "center" },
   queuePlayIcon: { color: "#fff", fontSize: 12 },
 
-  // Subscriptions Grid
-  gridContainer: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: 12 },
-  gridItem: { width: (width - 48 - 24) / 3, aspectRatio: 1, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.05)" },
-  gridImage: { width: "100%", height: "100%", borderRadius: 16 },
-  unreadBadge: { position: "absolute", top: -4, right: -4, width: 12, height: 12, borderRadius: 6, backgroundColor: "#8b5cf6", borderWidth: 2, borderColor: "#000" },
-
-  // Discovery
-  discoveryButton: { flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.05)", padding: 16, borderRadius: 16, borderWidth: 1, borderColor: "rgba(255,255,255,0.08)" },
-  discoveryIcon: { fontSize: 20, marginRight: 16 },
-  discoveryText: { color: "#fff", fontSize: 15, fontFamily: "Raleway_600SemiBold" },
+  // Subscriptions List
+  listContainer: { gap: 12 },
+  listItem: { flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.03)", padding: 12, borderRadius: 16, borderWidth: 1, borderColor: "rgba(255,255,255,0.05)" },
+  listImage: { width: 48, height: 48, borderRadius: 24, marginRight: 16 },
+  listInfo: { flex: 1 },
+  listTitle: { color: "#fff", fontSize: 15, fontFamily: "Raleway_600SemiBold", marginBottom: 4 },
+  listSub: { color: "#8a8a8a", fontSize: 13, fontFamily: "Raleway_400Regular" },
+  listOptionsButton: { paddingHorizontal: 12, paddingVertical: 8 },
+  listOptionsIcon: { color: "#666", fontSize: 18, fontWeight: "bold" },
+  addSubscriptionButton: { width: 32, height: 32, borderRadius: 16, backgroundColor: "rgba(139, 92, 246, 0.15)", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(139, 92, 246, 0.4)" },
+  addSubscriptionIcon: { color: "#b99eff", fontSize: 18, lineHeight: 20 },
 });

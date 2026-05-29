@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Dimensions, Text } from "react-native";
-import { GestureDetector, Gesture } from "react-native-gesture-handler";
+import { usePathname, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Dimensions, StyleSheet, Text, View } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
-  useSharedValue,
+  runOnJS,
   useAnimatedStyle,
+  useSharedValue,
   withSpring,
   withTiming,
-  runOnJS,
 } from "react-native-reanimated";
-import { useRouter, usePathname } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
@@ -20,6 +20,8 @@ const ROUTES = [
   "/user/profile",
 ];
 
+let hasShownToast = false;
+
 export default function SwipeNavigator({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -30,13 +32,16 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
   const toastTranslateY = useSharedValue(20);
 
   useEffect(() => {
+    if (hasShownToast) return;
+    hasShownToast = true;
+
     toastOpacity.value = withTiming(1, { duration: 600 });
     toastTranslateY.value = withTiming(0, { duration: 600 });
 
     const timer = setTimeout(() => {
       toastOpacity.value = withTiming(0, { duration: 600 });
       toastTranslateY.value = withTiming(20, { duration: 600 });
-    }, 8000);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -58,14 +63,13 @@ export default function SwipeNavigator({ children }: { children: React.ReactNode
     let nextIndex = direction === "left" ? currentIndex + 1 : currentIndex - 1;
     
     if (nextIndex < 0) nextIndex = 0;
-    // Cap at library (index 3) since profile isn't built yet
-    if (nextIndex > 3) nextIndex = 3;
+    if (nextIndex > ROUTES.length - 1) nextIndex = ROUTES.length - 1;
 
     if (nextIndex !== currentIndex) {
       router.push(ROUTES[nextIndex] as any);
     }
     
-    setTimeout(() => setIsNavigating(false), 500);
+    setTimeout(() => setIsNavigating(false), 500); // time taken for the spring back animation
   };
 
   const pan = Gesture.Pan()
