@@ -1,7 +1,8 @@
 import { BlurView } from "expo-blur";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dimensions,
   KeyboardAvoidingView,
@@ -15,33 +16,118 @@ import {
   View,
 } from "react-native";
 import Animated, {
+  Easing,
   FadeIn,
   FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
 } from "react-native-reanimated";
 
-const { width } = Dimensions.get("window");
+import { getTrendingPodcasts } from "../../services/podcast";
+
+const { width, height } = Dimensions.get("window");
+const ITEM_SIZE = width / 3;
+
+// Custom Animated Scrolling Column Component
+const ScrollingColumn = ({ data, duration, reverse = false }: any) => {
+  // To create a seamless loop, we'll translate up by exactly half the total height (one full set of data).
+  const halfHeight = ITEM_SIZE * data.length;
+  const translateY = useSharedValue(reverse ? -halfHeight : 0);
+
+  useEffect(() => {
+    translateY.value = withRepeat(
+      withTiming(reverse ? 0 : -halfHeight, {
+        duration,
+        easing: Easing.linear,
+      }),
+      -1,
+      false
+    );
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: translateY.value }],
+    };
+  });
+
+  // Duplicate data to make the loop seamless
+  const renderData = [...data, ...data];
+
+  return (
+    <Animated.View style={[{ width: ITEM_SIZE, alignItems: "center" }, animatedStyle]}>
+      {renderData.map((item: any, i: number) => (
+        <Image
+          key={i}
+          source={{ uri: item.artworkUrl600 || item.artworkUrl100 }}
+          style={styles.podcastImage}
+        />
+      ))}
+    </Animated.View>
+  );
+};
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [focusField, setFocusField] = useState<"email" | "password" | null>(null);
+  
+  const [podcasts, setPodcasts] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadPodcasts = async () => {
+      try {
+        const data = await getTrendingPodcasts();
+        const unique = data.filter(
+          (podcast: any, index: number, self: any[]) =>
+            index === self.findIndex((p) => p.collectionName === podcast.collectionName)
+        );
+        // We need about 30 unique podcasts to create 3 columns of 10
+        setPodcasts(unique.slice(0, 30));
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    loadPodcasts();
+  }, []);
 
   const handleLogin = () => {
-    // Auth login logic placeholder
     console.log("Login with email:", email);
-    // redirect to user/selection.tsx page 
-    router.push("/onboarding/selection")
-    
+    router.push("/onboarding/selection");
   };
+
+  const col1 = podcasts.slice(0, 10);
+  const col2 = podcasts.slice(10, 20);
+  const col3 = podcasts.slice(20, 30);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* Background Gradient */}
+      {/* Background Underlay */}
+      <View style={[styles.absoluteFill, { backgroundColor: "#000" }]} />
+
+      {/* Scrolling Columns Background */}
+      {podcasts.length > 0 && (
+        <View style={styles.scrollingBackgroundContainer}>
+          <ScrollingColumn data={col1} duration={45000} reverse={false} />
+          <ScrollingColumn data={col2} duration={55000} reverse={true} />
+          <ScrollingColumn data={col3} duration={40000} reverse={false} />
+        </View>
+      )}
+
+      {/* Deep Gradient Mask to ensure form readability */}
       <LinearGradient
-        colors={["#000000", "#060606", "#000000"]}
+        colors={[
+          "rgba(0,0,0,0.4)", 
+          "rgba(0,0,0,0.85)", 
+          "#000000"
+        ]}
+        locations={[0, 0.4, 1]}
         style={styles.absoluteFill}
+        pointerEvents="none"
       />
 
       {/* Ambient purple/blue glows */}
@@ -136,7 +222,6 @@ export default function Login() {
 
               {/* Sign In Button */}
               <TouchableOpacity
-
                 onPress={handleLogin}
                 activeOpacity={0.88}
                 style={styles.submitButtonContainer}
@@ -144,8 +229,8 @@ export default function Login() {
                 <BlurView intensity={35} tint="dark" style={styles.submitButton}>
                   <LinearGradient
                     colors={[
-                      "rgba(109, 93, 252, 0.2)",
-                      "rgba(109, 93, 252, 0.05)"
+                      "rgba(109, 93, 252, 0.4)",
+                      "rgba(109, 93, 252, 0.1)"
                     ]}
                     style={styles.absoluteFill}
                   />
@@ -172,6 +257,23 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
   },
+  scrollingBackgroundContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: -50,
+    bottom: -50,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    opacity: 0.8, // Slightly fade the entire background 
+  },
+  podcastImage: {
+    width: ITEM_SIZE - 16,
+    height: ITEM_SIZE - 16,
+    borderRadius: 16,
+    marginBottom: 16,
+    opacity: 0.4, // Keep individual images dim so they don't overpower text
+  },
   glowTop: {
     position: "absolute",
     top: -80,
@@ -179,7 +281,7 @@ const styles = StyleSheet.create({
     width: 280,
     height: 280,
     borderRadius: 140,
-    backgroundColor: "rgba(109, 93, 252, 0.08)",
+    backgroundColor: "rgba(109, 93, 252, 0.15)",
   },
   glowBottom: {
     position: "absolute",
@@ -188,7 +290,7 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
     borderRadius: 150,
-    backgroundColor: "rgba(139, 92, 246, 0.06)",
+    backgroundColor: "rgba(139, 92, 246, 0.1)",
   },
   safeArea: {
     flex: 1,
@@ -207,12 +309,13 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: "rgba(255, 255, 255, 0.15)",
   },
   backButtonBlur: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.05)",
   },
   backIcon: {
     color: "#fff",
@@ -230,13 +333,19 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontFamily: "Raleway_700Bold",
     letterSpacing: 0.5,
+    textShadowColor: "rgba(0,0,0,0.8)",
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 8,
   },
   subtitleText: {
-    color: "#8e8e8e",
+    color: "#ccc",
     fontSize: 15,
     fontFamily: "Raleway_400Regular",
     lineHeight: 22,
     marginTop: 8,
+    textShadowColor: "rgba(0,0,0,0.8)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   formContainer: {
     marginTop: 40,
@@ -251,27 +360,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   inputLabel: {
-    color: "rgba(255,255,255,0.4)",
+    color: "rgba(255,255,255,0.6)",
     fontSize: 11,
     fontFamily: "Raleway_600SemiBold",
     letterSpacing: 1.5,
   },
   forgotPasswordText: {
-    color: "rgba(109, 93, 252, 0.8)",
+    color: "rgba(139, 92, 246, 0.9)",
     fontSize: 12,
     fontFamily: "Raleway_600SemiBold",
   },
   inputWrapper: {
     height: 58,
     borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.02)",
+    backgroundColor: "rgba(20,20,25,0.6)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: "rgba(255, 255, 255, 0.12)",
     overflow: "hidden",
   },
   inputWrapperFocused: {
-    borderColor: "rgba(109, 93, 252, 0.5)",
-    backgroundColor: "rgba(255,255,255,0.04)",
+    borderColor: "rgba(139, 92, 246, 0.8)",
+    backgroundColor: "rgba(20,20,25,0.8)",
   },
   textInput: {
     flex: 1,
@@ -284,13 +393,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: "hidden",
     marginTop: 12,
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.4)",
   },
   submitButton: {
     height: 58,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(109, 93, 252, 0.2)",
+    backgroundColor: "rgba(139, 92, 246, 0.1)",
   },
   submitButtonText: {
     color: "#fff",

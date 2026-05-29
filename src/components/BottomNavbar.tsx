@@ -42,7 +42,7 @@ export default function BottomNavbar() {
 
       <TouchableOpacity 
         style={[styles.iconContainer, isRouteActive("/user/brain") && styles.activeIconGlow]} 
-        onPress={() => {}}
+        onPress={() => router.push("/user/brain" as any)}
       >
         <Brain size={20} color={getIconColor("/user/brain")} />
       </TouchableOpacity>
