@@ -28,7 +28,9 @@ export default function Layout() {
             backgroundColor: "#000",
           },
         }}
-      />
+      >
+        <Stack.Screen name="player" options={{ presentation: "modal" }} />
+      </Stack>
     </GestureHandlerRootView>
   );
 }

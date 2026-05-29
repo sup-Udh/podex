@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { useRouter } from "expo-router";
 
 import BottomNavbar from "../../components/BottomNavbar";
 import SwipeNavigator from "../../components/SwipeNavigator";
@@ -19,6 +20,7 @@ import SwipeNavigator from "../../components/SwipeNavigator";
 const { width } = Dimensions.get("window");
 
 export default function BrainScreen() {
+  const router = useRouter();
   return (
     <SwipeNavigator>
       <View style={styles.container}>
@@ -97,7 +99,7 @@ export default function BrainScreen() {
                 "Tongkat Ali at 400mg per day has been shown to increase free testosterone by reducing sex hormone-binding globulin."
               </Text>
 
-              <TouchableOpacity style={styles.playClipButton} activeOpacity={0.8}>
+              <TouchableOpacity style={styles.playClipButton} activeOpacity={0.8} onPress={() => router.push("/player" as any)}>
                 <LinearGradient colors={["rgba(139, 92, 246, 0.4)", "rgba(139, 92, 246, 0.1)"]} style={StyleSheet.absoluteFill} />
                 <Text style={styles.playClipIcon}>▶</Text>
                 <Text style={styles.playClipText}>Play Clip at 1:14:32</Text>
@@ -117,7 +119,7 @@ export default function BrainScreen() {
                 "Play iterated games. All the returns in life, whether in wealth, relationships, or knowledge, come from compound interest."
               </Text>
 
-              <TouchableOpacity style={styles.playClipButton} activeOpacity={0.8}>
+              <TouchableOpacity style={styles.playClipButton} activeOpacity={0.8} onPress={() => router.push("/player" as any)}>
                 <LinearGradient colors={["rgba(139, 92, 246, 0.4)", "rgba(139, 92, 246, 0.1)"]} style={StyleSheet.absoluteFill} />
                 <Text style={styles.playClipIcon}>▶</Text>
                 <Text style={styles.playClipText}>Play Clip at 22:15</Text>
@@ -137,7 +139,7 @@ export default function BrainScreen() {
                 "If you haven't read 'The Beginning of Infinity' by David Deutsch, it completely changes how you view knowledge creation."
               </Text>
 
-              <TouchableOpacity style={styles.playClipButton} activeOpacity={0.8}>
+              <TouchableOpacity style={styles.playClipButton} activeOpacity={0.8} onPress={() => router.push("/player" as any)}>
                 <LinearGradient colors={["rgba(139, 92, 246, 0.4)", "rgba(139, 92, 246, 0.1)"]} style={StyleSheet.absoluteFill} />
                 <Text style={styles.playClipIcon}>▶</Text>
                 <Text style={styles.playClipText}>Play Clip at 2:03:41</Text>

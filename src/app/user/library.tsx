@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { useRouter } from "expo-router";
 
 import BottomNavbar from "../../components/BottomNavbar";
 import SwipeNavigator from "../../components/SwipeNavigator";
@@ -19,6 +20,7 @@ import { getTrendingPodcasts } from "../../services/podcast";
 const { width } = Dimensions.get("window");
 
 export default function LibraryScreen() {
+  const router = useRouter();
   const [podcasts, setPodcasts] = useState<any[]>([]);
 
   useEffect(() => {
@@ -74,7 +76,7 @@ export default function LibraryScreen() {
                     </View>
                     <Text style={styles.progressText}>{i === 0 ? "45 mins left" : "1 hr 12 mins left"}</Text>
 
-                    <TouchableOpacity style={styles.resumeButton} activeOpacity={0.8}>
+                    <TouchableOpacity style={styles.resumeButton} activeOpacity={0.8} onPress={() => router.push("/player" as any)}>
                       <Text style={styles.resumeButtonText}>▶ Resume</Text>
                     </TouchableOpacity>
                   </View>
@@ -98,7 +100,7 @@ export default function LibraryScreen() {
                     <Text style={styles.queueEpisode} numberOfLines={1}>Optimizing Sleep & Performance</Text>
                     <Text style={styles.queueReason}>Queued because you searched "Dopamine"</Text>
                   </View>
-                  <TouchableOpacity style={styles.queuePlayButton}>
+                  <TouchableOpacity style={styles.queuePlayButton} onPress={() => router.push("/player" as any)}>
                     <Text style={styles.queuePlayIcon}>▶</Text>
                   </TouchableOpacity>
                 </View>
