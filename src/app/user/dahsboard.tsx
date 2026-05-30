@@ -1,7 +1,8 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   ScrollView,
   StyleSheet,
@@ -13,12 +14,76 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 
 import BottomNavbar from "../../components/BottomNavbar";
 import SwipeNavigator from "../../components/SwipeNavigator";
+import { useAuth } from "../../hooks/useAuth";
+import { usePlayer } from "../../contexts/PlayerContext";
+import { supabase } from "../../services/supabase";
+import { fetchEpisodesFromFeed, Episode } from "../../services/episodes";
+import { useRouter } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
 import { styles } from "../../styles/dashboardStyles";
 
 export default function Dashboard() {
+  const router = useRouter();
+  const { session } = useAuth();
+  const { playEpisode } = usePlayer();
+  
+  const [podcasts, setPodcasts] = useState<any[]>([]);
+  const [episodes, setEpisodes] = useState<Episode[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (session?.user) {
+      loadDashboardData();
+    }
+  }, [session]);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      // 1. Fetch user's podcasts
+      const { data, error } = await supabase
+        .from("user_podcasts")
+        .select("*")
+        .eq("user_id", session?.user.id)
+        .order("created_at", { ascending: false });
+
+      if (error || !data) {
+        setLoading(false);
+        return;
+      }
+
+      setPodcasts(data);
+
+      // 2. Fetch episodes for all feeds
+      let allEpisodes: Episode[] = [];
+      await Promise.all(
+        data.map(async (pod) => {
+          if (pod.feed_url) {
+            const eps = await fetchEpisodesFromFeed(pod.feed_url, 3); // Get latest 3 from each
+            // Inject podcast name and image into episode for UI if missing
+            const enhancedEps = eps.map(e => ({
+              ...e,
+              podcastName: e.podcastName || pod.collection_name,
+              imageUrl: e.imageUrl || pod.artwork_url,
+              podcastId: pod.collection_id
+            }));
+            allEpisodes = [...allEpisodes, ...enhancedEps];
+          }
+        })
+      );
+
+      // Sort by date
+      allEpisodes.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+      setEpisodes(allEpisodes);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SwipeNavigator>
       <View style={styles.container}>
@@ -30,9 +95,8 @@ export default function Dashboard() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 150 }]}
       >
-        {/* 1. Search Bar */}
         <Animated.View entering={FadeInDown.duration(600)} style={styles.searchContainer}>
           <View style={styles.searchPill}>
             <Text style={styles.searchIcon}>✨</Text>
@@ -40,159 +104,80 @@ export default function Dashboard() {
           </View>
         </Animated.View>
 
-        {/* 2. Daily Investigation Hero */}
-        <Animated.View entering={FadeInDown.delay(100).duration(600)} style={styles.section}>
-          <View style={styles.heroCard}>
-            <LinearGradient
-              colors={["rgba(255,255,255,0.04)", "rgba(255,255,255,0.01)"]}
-              style={StyleSheet.absoluteFill}
-            />
-            {/* Ambient Background Element */}
-            <View style={styles.heroAmbientGlow} />
-
-            <View style={styles.heroTopRow}>
-              <View style={styles.heroBadge}>
-                <Text style={styles.heroBadgeText}>Daily Investigation</Text>
-              </View>
-              <Text style={styles.heroTimeText}>5m</Text>
-            </View>
-
-            <Text style={styles.heroTitle}>
-              Summary: The Future of Neural Architectures
+        {loading ? (
+          <ActivityIndicator size="large" color="#8b5cf6" style={{ marginTop: 100 }} />
+        ) : podcasts.length === 0 ? (
+          <Animated.View entering={FadeInDown.delay(200)} style={{ alignItems: "center", marginTop: 80, paddingHorizontal: 40 }}>
+            <Text style={{ color: "#fff", fontSize: 24, textAlign: "center", fontFamily: "Raleway_700Bold", marginBottom: 16 }}>
+              Your brain is empty
             </Text>
-            <Text style={styles.heroDescription}>
-              Aggregated from 'The AI Podcast' and 'Lex Fridman'. Key takeaway: Transformers are evolving into liquid neural...
+            <Text style={{ color: "#8a8a8a", fontSize: 16, textAlign: "center", marginBottom: 32 }}>
+              Start building your second brain by adding some podcasts to your library.
             </Text>
-
-            <TouchableOpacity style={styles.heroButton} activeOpacity={0.8}>
-              <LinearGradient colors={["#4b4073", "#2c244b"]} style={StyleSheet.absoluteFill} />
-              <Text style={styles.heroButtonIcon}>▶</Text>
-              <Text style={styles.heroButtonText}>Listen to Summary</Text>
+            <TouchableOpacity 
+              style={{ backgroundColor: "rgba(139, 92, 246, 0.2)", paddingHorizontal: 24, paddingVertical: 14, borderRadius: 24, borderWidth: 1, borderColor: "#8b5cf6" }}
+              onPress={() => router.push("/user/search" as any)}
+            >
+              <Text style={{ color: "#fff", fontFamily: "Raleway_700Bold" }}>Find Podcasts</Text>
             </TouchableOpacity>
-          </View>
-        </Animated.View>
+          </Animated.View>
+        ) : (
+          <>
+            {/* Subscriptions */}
+            <Animated.View entering={FadeInDown.delay(100).duration(600)} style={[styles.section, { paddingHorizontal: 0 }]}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>Your Podcasts</Text>
+                <TouchableOpacity onPress={() => router.push("/user/library" as any)}>
+                  <Text style={styles.viewAllText}>Library</Text>
+                </TouchableOpacity>
+              </View>
 
-        {/* 3. Your Subscriptions */}
-        <Animated.View entering={FadeInDown.delay(200).duration(600)} style={[styles.section, { paddingHorizontal: 0 }]}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Your Subscriptions</Text>
-            <Text style={styles.viewAllText}>View All</Text>
-          </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
+                {podcasts.map((sub) => (
+                  <View key={sub.id} style={styles.subCard}>
+                    <Image source={{ uri: sub.artwork_url }} style={styles.subImage} contentFit="cover" />
+                    <Text style={styles.subTitle} numberOfLines={1}>{sub.collection_name}</Text>
+                    <View style={styles.subUnderline} />
+                  </View>
+                ))}
+              </ScrollView>
+            </Animated.View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
-            {[
-              { title: "Tech Deconstructed", img: "https://is1-ssl.mzstatic.com/image/thumb/Podcasts116/v4/4a/14/83/4a1483ca-3058-294b-1498-38435d8af147/mza_10862024225302636402.jpg/600x600bb.jpg" },
-              { title: "Modern Stoic", img: "https://is1-ssl.mzstatic.com/image/thumb/Podcasts125/v4/80/7e/62/807e627d-7809-5433-8a9d-5a9e7f53f3e7/mza_15509746356708688757.jpg/600x600bb.jpg" },
-              { title: "Cosmic Horizon", img: "https://is1-ssl.mzstatic.com/image/thumb/Podcasts126/v4/71/e0/75/71e075c3-1fc3-6ca2-482f-293e4d943891/mza_4708764955743849931.jpg/600x600bb.jpg" },
-            ].map((sub, i) => (
-              <View key={i} style={styles.subCard}>
-                <Image source={{ uri: sub.img }} style={styles.subImage} />
-                <View style={styles.subBadge}>
-                  <Text style={styles.subBadgeText}>60m left</Text>
+            {/* Latest Episodes */}
+            <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>Latest Episodes</Text>
+              </View>
+
+              {episodes.map((ep, idx) => (
+                <View key={ep.id + idx} style={[styles.feedCard, { marginBottom: 16 }]}>
+                  <LinearGradient colors={["rgba(255,255,255,0.03)", "rgba(255,255,255,0.0)"]} style={StyleSheet.absoluteFill} />
+                  <View style={styles.feedCardHeader}>
+                    <Image source={{ uri: ep.imageUrl }} style={styles.feedCardImage} contentFit="cover" />
+                    <View style={styles.feedCardTitleContainer}>
+                      <Text style={styles.feedCardContext}>{ep.podcastName}</Text>
+                      <Text style={styles.feedCardTitle} numberOfLines={2}>{ep.title}</Text>
+                    </View>
+                  </View>
+                  
+                  <Text style={[styles.feedCardSnippet, { marginTop: 12 }]} numberOfLines={3}>
+                    {ep.description.replace(/<[^>]*>?/gm, '').trim()}
+                  </Text>
+                  
+                  <View style={[styles.feedCardFooter, { marginTop: 16 }]}>
+                    <View style={styles.footerLeft}>
+                      <Text style={styles.footerTime}>{ep.duration ? ep.duration : new Date(ep.pubDate).toLocaleDateString()}</Text>
+                    </View>
+                    <TouchableOpacity style={styles.playButtonMini} onPress={() => playEpisode(ep)}>
+                      <LinearGradient colors={["#4b4073", "#2c244b"]} style={StyleSheet.absoluteFill} />
+                      <Text style={styles.playButtonMiniIcon}>▶</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <Text style={styles.subTitle} numberOfLines={1}>{sub.title}</Text>
-                <View style={styles.subUnderline} />
-              </View>
-            ))}
-          </ScrollView>
-        </Animated.View>
-
-        {/* 4. Tags */}
-        <Animated.View entering={FadeInDown.delay(300).duration(600)} style={styles.section}>
-          <View style={styles.tagsContainer}>
-            {["Neuroscience", "Philosophy", "AI Systems", "Health"].map((tag, i) => (
-              <View key={i} style={styles.tagPill}>
-                <View style={styles.tagDot} />
-                <Text style={styles.tagText}>{tag}</Text>
-              </View>
-            ))}
-          </View>
-        </Animated.View>
-
-        {/* 5. Extracted Insights */}
-        <Animated.View entering={FadeInDown.delay(400).duration(600)} style={styles.section}>
-          <Text style={styles.sectionTitle}>Extracted Insights</Text>
-          <View style={styles.insightsList}>
-            {/* Insight 1 */}
-            <View style={styles.insightCard}>
-              <View style={styles.insightHeader}>
-                <Image source={{ uri: "https://via.placeholder.com/50/333333/ffffff?text=AH" }} style={styles.insightAvatar} />
-                <View style={styles.insightAuthorInfo}>
-                  <Text style={styles.insightAuthor}>ANDREW HUBERMAN</Text>
-                  <Text style={styles.insightSource}>Huberman Lab • 4m 32s</Text>
-                </View>
-                <Text style={styles.insightMenuIcon}>⋮</Text>
-              </View>
-              
-              <Text style={styles.insightQuote}>
-                "The primary driver of neuroplasticity isn't just repetition, it's the high-intensity focus followed by deep, non-sleep rest."
-              </Text>
-              
-              <View style={styles.insightScrubberContainer}>
-                <View style={styles.scrubberIconPlaceholder}><Text style={{color: '#8b5cf6'}}>▶</Text></View>
-                <View style={styles.scrubberLine}>
-                  <View style={styles.scrubberProgress} />
-                  <View style={styles.scrubberHandle} />
-                </View>
-                <Text style={styles.insightMenuIcon}>➦</Text>
-              </View>
-            </View>
-
-            {/* Insight 2 */}
-            <View style={styles.insightCard}>
-              <View style={styles.insightHeader}>
-                <Image source={{ uri: "https://via.placeholder.com/50/333333/ffffff?text=NR" }} style={styles.insightAvatar} />
-                <View style={styles.insightAuthorInfo}>
-                  <Text style={styles.insightAuthor}>NAVAL RAVIKANT</Text>
-                  <Text style={styles.insightSource}>Joe Rogan Experience • 1h 12m</Text>
-                </View>
-                <Text style={styles.insightMenuIcon}>⋮</Text>
-              </View>
-              
-              <Text style={styles.insightQuote}>
-                "Specific knowledge is the knowledge that you cannot be trained for. If society can train you, it can train someone else, and replace you."
-              </Text>
-              
-              <View style={styles.insightScrubberContainer}>
-                <View style={styles.scrubberIconPlaceholder}><Text style={{color: '#8b5cf6'}}>▶</Text></View>
-                <View style={styles.scrubberLine}>
-                  <View style={[styles.scrubberProgress, {width: "20%"}]} />
-                  <View style={styles.scrubberHandle} />
-                </View>
-                <Text style={styles.insightMenuIcon}>➦</Text>
-              </View>
-            </View>
-          </View>
-        </Animated.View>
-
-        {/* 6. Debate Mode */}
-        <Animated.View entering={FadeInDown.delay(500).duration(600)} style={styles.section}>
-          <View style={{flexDirection: "row", alignItems: "center", marginBottom: 16}}>
-            <Text style={{fontSize: 16, marginRight: 8}}>⚔️</Text>
-            <Text style={[styles.sectionTitle, {marginBottom: 0}]}>Debate Mode</Text>
-          </View>
-          
-          <View style={styles.debateCard}>
-            <Text style={styles.debateTopic}>TOPIC: AUGUST 2024</Text>
-            <Text style={styles.debateTitle}>Efficacy of Cold Exposure</Text>
-
-            <View style={styles.debateColumns}>
-              <View style={styles.debateSide}>
-                <Text style={styles.debateProLabel}>Huberman</Text>
-                <Text style={styles.debateText}>
-                  Argues it elevates spikes in immune system fortifications through consistent exposure.
-                </Text>
-              </View>
-              <View style={styles.debateDivider} />
-              <View style={styles.debateSide}>
-                <Text style={styles.debateConLabel}>Attia</Text>
-                <Text style={styles.debateText}>
-                  Points out data suggests limited recovery benefit if performed too close to hypertrophy training.
-                </Text>
-              </View>
-            </View>
-          </View>
-        </Animated.View>
+              ))}
+            </Animated.View>
+          </>
+        )}
 
         {/* Spacer for bottom navbar */}
         <View style={{ height: 40 }} />

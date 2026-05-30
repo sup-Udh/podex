@@ -13,10 +13,12 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 LogBox.ignoreLogs([
   '"shadow*" style props are deprecated. Use "boxShadow".',
   '"textShadow*" style props are deprecated. Use "textShadow".',
+  "AuthApiError: Invalid Refresh Token: Refresh Token Not Found",
 ]);
 import { AuthProvider } from "../contexts/AuthContext";
+import { PlayerProvider } from "../contexts/PlayerContext";
 
-export default function Layout() {
+export default function RootLayout() {
   const [loaded] = useFonts({
     Raleway_400Regular,
     Raleway_600SemiBold,
@@ -27,16 +29,18 @@ export default function Layout() {
 
   return (
     <AuthProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: {
-              backgroundColor: "#000",
-            },
-          }}
-        />
-      </GestureHandlerRootView>
+      <PlayerProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: {
+                backgroundColor: "#000",
+              },
+            }}
+          />
+        </GestureHandlerRootView>
+      </PlayerProvider>
     </AuthProvider>
   );
 }

@@ -241,7 +241,29 @@ export default function PodcastSelection() {
           disabled={!isReady}
           onPress={async () => {
              if (session?.user) {
+               // 1. Mark as onboarded
                await supabase.from("profiles").update({ has_onboarded: true }).eq("id", session.user.id);
+               
+               // 2. Save selected podcasts
+               const podcastsToSave = selected.map(id => {
+                 const pod = allPodcasts.find(p => p.collectionId === id);
+                 return {
+                   user_id: session.user.id,
+                   collection_id: pod.collectionId,
+                   collection_name: pod.collectionName,
+                   artist_name: pod.artistName || "",
+                   artwork_url: pod.artworkUrl600 || pod.artworkUrl100 || "",
+                   feed_url: pod.feedUrl || ""
+                 };
+               }).filter(p => p.feed_url); // Only save if we have a feedUrl
+
+               if (podcastsToSave.length > 0) {
+                 const { error } = await supabase.from("user_podcasts").insert(podcastsToSave);
+                 if (error) {
+                   console.error("Insert Error", error);
+                   alert("Insert Error: " + JSON.stringify(error));
+                 }
+               }
              }
              router.replace("/user/dahsboard" as any);
           }}
