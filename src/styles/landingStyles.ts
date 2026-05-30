@@ -191,6 +191,7 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 8,
   },
 
   buttonGlow: {
@@ -235,11 +236,12 @@ export const styles = StyleSheet.create({
 
   buttonText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "bold",
-    letterSpacing: 2,
+    letterSpacing: 1.5,
     fontFamily:
       "Raleway_600SemiBold",
+    flexShrink: 1,
   },
 
   footerText: {

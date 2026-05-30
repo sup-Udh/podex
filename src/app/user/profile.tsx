@@ -14,9 +14,18 @@ import SwipeNavigator from "../../components/SwipeNavigator";
 
 const { width } = Dimensions.get("window");
 
+import { useRouter } from "expo-router";
+import { supabase } from "../../services/supabase";
 import { styles } from "../../styles/profileStyles";
 
 export default function ProfileScreen() {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.replace("/landing" as any);
+  };
+
   return (
     <SwipeNavigator>
       <View style={styles.container}>
@@ -103,7 +112,11 @@ export default function ProfileScreen() {
             </View>
 
             {/* Logout Button */}
-            <TouchableOpacity style={styles.logoutButton} activeOpacity={0.8}>
+            <TouchableOpacity 
+              style={styles.logoutButton} 
+              activeOpacity={0.8}
+              onPress={handleLogout}
+            >
               <Text style={styles.logoutButtonText}>Log Out</Text>
             </TouchableOpacity>
           </Animated.View>
