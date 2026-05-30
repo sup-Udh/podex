@@ -7,8 +7,14 @@ import {
   useFonts,
 } from "@expo-google-fonts/raleway";
 import { Stack } from "expo-router";
-
+import { LogBox } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+
+LogBox.ignoreLogs([
+  '"shadow*" style props are deprecated. Use "boxShadow".',
+  '"textShadow*" style props are deprecated. Use "textShadow".',
+]);
+import { AuthProvider } from "../contexts/AuthContext";
 
 export default function Layout() {
   const [loaded] = useFonts({
@@ -20,15 +26,17 @@ export default function Layout() {
   if (!loaded) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: {
-            backgroundColor: "#000",
-          },
-        }}
-      />
-    </GestureHandlerRootView>
+    <AuthProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: {
+              backgroundColor: "#000",
+            },
+          }}
+        />
+      </GestureHandlerRootView>
+    </AuthProvider>
   );
 }

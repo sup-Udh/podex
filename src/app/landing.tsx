@@ -18,6 +18,14 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { useEffect, useMemo, useState } from "react";
+import * as WebBrowser from "expo-web-browser";
+import { makeRedirectUri } from "expo-auth-session";
+import * as QueryParams from "expo-auth-session/build/QueryParams";
+import { supabase } from "../services/supabase";
+import { useAuth } from "../hooks/useAuth";
+import { useRouter } from "expo-router";
+
+WebBrowser.maybeCompleteAuthSession();
 
 import { getTrendingPodcasts } from "../services/podcast";
 
@@ -27,6 +35,29 @@ import { styles } from "../styles/landingStyles";
 
 export default function Landing() {
   const [podcasts, setPodcasts] = useState<any[]>([]);
+  const { session } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (session) {
+      checkOnboarding();
+    }
+  }, [session]);
+
+  const checkOnboarding = async () => {
+    if (!session?.user) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("has_onboarded")
+      .eq("id", session.user.id)
+      .single();
+
+    if (data?.has_onboarded) {
+      router.replace("/user/dahsboard" as any);
+    } else {
+      router.replace("/user/onboarding" as any);
+    }
+  };
 
   useEffect(() => {
     loadPodcasts();
@@ -49,6 +80,45 @@ export default function Landing() {
       setPodcasts(unique.slice(0, 32));
     } catch (error) {
       console.log(error);
+    }
+  };
+
+  const performGoogleLogin = async () => {
+    try {
+      const redirectTo = makeRedirectUri();
+      console.log("\n\n=== 🛑 IMPORTANT FOR SUPABASE 🛑 ===");
+      console.log("You MUST add this exact URL to your Supabase Redirect URLs list:");
+      console.log(redirectTo);
+      console.log("=====================================\n\n");
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+        if (res.type === "success" && res.url) {
+          const { params, errorCode } = QueryParams.getQueryParams(res.url);
+
+          if (errorCode) throw new Error(errorCode);
+          const { access_token, refresh_token } = params;
+
+          if (access_token && refresh_token) {
+            await supabase.auth.setSession({
+              access_token,
+              refresh_token,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Google login failed", err);
     }
   };
 
@@ -238,6 +308,7 @@ export default function Landing() {
             style={
               styles.buttonTouchable
             }
+            onPress={performGoogleLogin}
           >
             <BlurView
               intensity={35}
@@ -287,70 +358,6 @@ export default function Landing() {
                 }
               >
                 CONTINUE WITH GOOGLE
-              </Text>
-            </BlurView>
-          </TouchableOpacity>
-
-          {/* Email */}
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={() =>
-              router.push(
-                "/auth/login" as any
-              )
-            }
-            style={
-              styles.buttonTouchable
-            }
-          >
-            <BlurView
-              intensity={35}
-              tint="dark"
-              style={styles.buttonBlur}
-            >
-              {/* Glow */}
-              <View
-                style={
-                  styles.buttonGlow
-                }
-              />
-
-              {/* Highlight */}
-              <View
-                style={
-                  styles.buttonHighlight
-                }
-              />
-
-              {/* Icon */}
-              <View
-                style={
-                  styles.buttonIconContainer
-                }
-              >
-                <Text
-                  style={
-                    styles.buttonIconText
-                  }
-                >
-                  ✉
-                </Text>
-              </View>
-
-              {/* Divider */}
-              <View
-                style={
-                  styles.buttonDivider
-                }
-              />
-
-              {/* Text */}
-              <Text
-                style={
-                  styles.buttonText
-                }
-              >
-                CONTINUE WITH EMAIL
               </Text>
             </BlurView>
           </TouchableOpacity>
