@@ -55,7 +55,7 @@ export default function Landing() {
     if (data?.has_onboarded) {
       router.replace("/user/dahsboard" as any);
     } else {
-      router.replace("/user/onboarding" as any);
+      router.replace("/onboarding" as any);
     }
   };
 

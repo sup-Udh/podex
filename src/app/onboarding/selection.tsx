@@ -23,10 +23,13 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { getTrendingPodcasts } from "../../services/podcast";
+import { useAuth } from "../../hooks/useAuth";
+import { supabase } from "../../services/supabase";
 
 const { width } = Dimensions.get("window");
 
 export default function PodcastSelection() {
+  const { session } = useAuth();
   const [selected, setSelected] = useState<number[]>([]);
   const [allPodcasts, setAllPodcasts] = useState<any[]>([]);
   const [podcasts, setPodcasts] = useState<any[]>([]);
@@ -236,7 +239,12 @@ export default function PodcastSelection() {
         <TouchableOpacity
           activeOpacity={0.88}
           disabled={!isReady}
-          onPress={() => router.push("/user/dahsboard" as any)}
+          onPress={async () => {
+             if (session?.user) {
+               await supabase.from("profiles").update({ has_onboarded: true }).eq("id", session.user.id);
+             }
+             router.replace("/user/dahsboard" as any);
+          }}
           style={styles.continueButtonWrapper}
         >
           <BlurView

@@ -60,7 +60,7 @@ export default function OnboardingScreen() {
 
   const handleContinue = () => {
     // Save to global state or context if needed, but for now we just move forward
-    router.push("/user/selections" as any);
+    router.push("/onboarding/selection" as any);
   };
 
   return (
