@@ -32,7 +32,7 @@ export const requestTranscription = async (audioUrl: string): Promise<string | n
   }
 };
 
-export const pollTranscription = async (transcriptId: string): Promise<string | null> => {
+export const pollTranscription = async (transcriptId: string): Promise<{ text: string, words: any[] } | null> => {
   return new Promise((resolve) => {
     const poll = setInterval(async () => {
       try {
@@ -47,7 +47,7 @@ export const pollTranscription = async (transcriptId: string): Promise<string | 
 
         if (data.status === "completed") {
           clearInterval(poll);
-          resolve(data.text);
+          resolve({ text: data.text, words: data.words || [] });
         } else if (data.status === "error") {
           clearInterval(poll);
           console.error("Transcription error:", data.error);
