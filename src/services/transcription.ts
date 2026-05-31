@@ -15,7 +15,7 @@ export const requestTranscription = async (audioUrl: string): Promise<string | n
       },
       body: JSON.stringify({
         audio_url: audioUrl,
-        language_code: "en", // Default to English to avoid speech_models error
+        speech_models: ["universal-2"] // Provide the exact model requested by the API error
       }),
     });
 
