@@ -39,7 +39,7 @@ export default function PlayerScreen() {
   const router = useRouter();
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   
-  const { currentEpisode, isPlaying, positionMillis, durationMillis, togglePlayPause, seekForward, seekBackward, seekTo } = usePlayer();
+  const { currentEpisode, isPlaying, positionMillis, durationMillis, togglePlayPause, seekForward, seekBackward, seekTo, transcriptStatus, transcriptText } = usePlayer();
 
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [scrubMillis, setScrubMillis] = useState(0);
@@ -192,31 +192,44 @@ export default function PlayerScreen() {
         {/* Live AI Engine Section */}
         <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.aiSection}>
           <View style={styles.aiHeader}>
-            <Animated.View style={[styles.pulseDot, pulsingStyle]} />
-            <Text style={styles.aiHeaderText}>PODEX AI IS LISTENING</Text>
+            <Animated.View style={[styles.pulseDot, pulsingStyle, { backgroundColor: transcriptStatus === "completed" ? "#10b981" : transcriptStatus === "error" ? "#ef4444" : "#8b5cf6" }]} />
+            <Text style={styles.aiHeaderText}>
+              {transcriptStatus === "completed" ? "TRANSCRIPTION COMPLETE" : transcriptStatus === "error" ? "TRANSCRIPTION FAILED" : "PODEX AI IS TRANSCRIBING"}
+            </Text>
           </View>
 
           <View style={styles.liveFeedContainer}>
-            {/* Feed Item 1 */}
-            <View style={styles.logItem}>
-              <Text style={styles.logText}>
-                <Text style={styles.logTimestamp}>[00:00:12]</Text> <Text style={styles.logType}>[EXTRACT_BOOK]</Text> Outlive: The Science and Art of Longevity
-              </Text>
-            </View>
+            {transcriptStatus === "processing" && (
+              <View style={styles.logItem}>
+                 <Text style={styles.logText}>
+                    <Text style={styles.logTimestamp}>[{formatTime(displayMillis)}]</Text> <Text style={styles.logTypeInfo}>[PROCESSING]</Text> Audio is currently being transcribed in the background...
+                 </Text>
+              </View>
+            )}
+            
+            {transcriptStatus === "completed" && transcriptText && (
+               <ScrollView style={{ maxHeight: 300 }} nestedScrollEnabled>
+                 <Text style={{ color: "#e4e4e7", fontSize: 14, lineHeight: 22, fontFamily: "Raleway_400Regular" }}>
+                   {transcriptText}
+                 </Text>
+               </ScrollView>
+            )}
 
-            {/* Feed Item 2 */}
-            <View style={styles.logItem}>
-              <Text style={styles.logText}>
-                <Text style={styles.logTimestamp}>[00:02:45]</Text> <Text style={styles.logTypeInfo}>[EXTRACT_FRAMEWORK]</Text> Centenarian Decathlon Protocol
-              </Text>
-            </View>
+            {transcriptStatus === "error" && (
+              <View style={styles.logItem}>
+                 <Text style={styles.logText}>
+                    <Text style={styles.logType}>[ERROR]</Text> Failed to transcribe audio or file size exceeded.
+                 </Text>
+              </View>
+            )}
 
-            {/* Feed Item 3 */}
-            <View style={styles.logItem}>
-              <Text style={styles.logText}>
-                <Text style={styles.logTimestamp}>[00:15:30]</Text> <Text style={styles.logTypeSuccess}>[EXTRACT_SUPPLEMENT]</Text> Omega-3 EPA at 2g/day
-              </Text>
-            </View>
+            {transcriptStatus === "idle" && (
+              <View style={styles.logItem}>
+                 <Text style={styles.logText}>
+                    <Text style={styles.logTypeInfo}>[IDLE]</Text> Preparing AI pipeline...
+                 </Text>
+              </View>
+            )}
           </View>
         </Animated.View>
 

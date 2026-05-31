@@ -5,6 +5,7 @@ import React, { createContext, useContext, useEffect, useState, useRef } from "r
 import { Episode } from "../services/episodes";
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../services/supabase";
+import { requestTranscription, pollTranscription } from "../services/transcription";
 
 interface PlayerContextType {
   currentEpisode: Episode | null;
@@ -17,6 +18,8 @@ interface PlayerContextType {
   seekBackward: () => Promise<void>;
   seekTo: (millis: number) => Promise<void>;
   closePlayer: () => Promise<void>;
+  transcriptStatus: "idle" | "processing" | "completed" | "error";
+  transcriptText: string | null;
 }
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
@@ -27,6 +30,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [positionMillis, setPositionMillis] = useState(0);
   const [durationMillis, setDurationMillis] = useState(0);
+  const [transcriptStatus, setTranscriptStatus] = useState<"idle" | "processing" | "completed" | "error">("idle");
+  const [transcriptText, setTranscriptText] = useState<string | null>(null);
 
   const { session } = useAuth();
   const lastSyncRef = useRef(0);
@@ -47,6 +52,57 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const checkAndTranscribe = async (userId: string, ep: Episode) => {
+    setTranscriptStatus("processing");
+    setTranscriptText(null);
+    try {
+      const { data } = await supabase
+        .from("episode_transcripts")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("episode_id", ep.id)
+        .maybeSingle();
+      
+      if (data && data.status === "completed") {
+        setTranscriptText(data.transcript_text);
+        setTranscriptStatus("completed");
+        return;
+      }
+
+      await supabase.from("episode_transcripts").upsert({
+        user_id: userId,
+        podcast_id: ep.podcastId,
+        episode_id: ep.id,
+        status: "processing",
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id, episode_id" });
+
+      const transcriptId = await requestTranscription(ep.audioUrl);
+      if (transcriptId) {
+        const text = await pollTranscription(transcriptId);
+        if (text) {
+          await supabase.from("episode_transcripts").update({
+            status: "completed",
+            transcript_text: text,
+            updated_at: new Date().toISOString()
+          }).eq("user_id", userId).eq("episode_id", ep.id);
+          
+          // Only update UI if we are still listening to the same episode
+          setTranscriptText(prev => text);
+          setTranscriptStatus(prev => "completed");
+        } else {
+          setTranscriptStatus("error");
+          await supabase.from("episode_transcripts").update({ status: "failed" }).eq("user_id", userId).eq("episode_id", ep.id);
+        }
+      } else {
+         setTranscriptStatus("error");
+      }
+    } catch (e) {
+       console.log(e);
+       setTranscriptStatus("error");
+    }
+  };
+
   useEffect(() => {
     // Configure audio for background playback
     Audio.setAudioModeAsync({
@@ -58,13 +114,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
       playThroughEarpieceAndroid: false,
     });
-
-    return () => {
-      if (sound) {
-        sound.unloadAsync();
-      }
-    };
-  }, [sound]);
+  }, []);
 
   const playEpisode = async (episode: Episode) => {
     try {
@@ -77,6 +127,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       setIsPlaying(true);
       setPositionMillis(0);
       setDurationMillis(0);
+
+      if (session?.user) {
+        checkAndTranscribe(session.user.id, episode);
+      }
 
       const { sound: newSound } = await Audio.Sound.createAsync(
         { uri: episode.audioUrl },
@@ -178,6 +232,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         seekBackward,
         seekTo,
         closePlayer,
+        transcriptStatus,
+        transcriptText,
       }}
     >
       {children}
