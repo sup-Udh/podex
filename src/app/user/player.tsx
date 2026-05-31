@@ -12,11 +12,7 @@ import {
   Modal,
   TouchableWithoutFeedback,
   PanResponder,
-  TextInput,
 } from "react-native";
-import { Audio } from "expo-av";
-import { askPodcast, transcribeVoice, generateSpeech } from "../../services/ai";
-import { useAuth } from "../../hooks/useAuth";
 import Animated, {
   FadeInDown,
   useAnimatedStyle,
@@ -44,84 +40,6 @@ export default function PlayerScreen() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   
   const { currentEpisode, isPlaying, positionMillis, durationMillis, togglePlayPause, seekForward, seekBackward, seekTo, transcriptStatus, transcriptText } = usePlayer();
-
-  const { session } = useAuth();
-
-  const [activeTab, setActiveTab] = useState<"transcript" | "chat">("transcript");
-  const [chatMessages, setChatMessages] = useState<{ role: "user"|"ai", text: string }[]>([]);
-  const [inputText, setInputText] = useState("");
-  const [isAiTyping, setIsAiTyping] = useState(false);
-
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  const [isVoiceMode, setIsVoiceMode] = useState(false);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-
-  const sendMessage = async (text: string) => {
-    if (!text.trim() || !currentEpisode || !session?.user) return;
-    setChatMessages(prev => [...prev, { role: "user", text }]);
-    setInputText("");
-    setIsAiTyping(true);
-
-    try {
-      const answer = await askPodcast(text, currentEpisode.id, session.user.id);
-      setChatMessages(prev => [...prev, { role: "ai", text: answer }]);
-
-      if (isVoiceMode) {
-         playAiSpeech(answer);
-      }
-    } catch (e) {
-       setChatMessages(prev => [...prev, { role: "ai", text: "Sorry, I couldn't process that right now." }]);
-    } finally {
-      setIsAiTyping(false);
-      setIsVoiceMode(false);
-    }
-  };
-
-  const playAiSpeech = async (text: string) => {
-     try {
-       const base64Audio = await generateSpeech(text);
-       const { sound: ttsSound } = await Audio.Sound.createAsync({ uri: base64Audio });
-       setIsPlayingAudio(true);
-       await ttsSound.playAsync();
-       ttsSound.setOnPlaybackStatusUpdate((status: any) => {
-         if (status.didJustFinish) {
-            setIsPlayingAudio(false);
-            ttsSound.unloadAsync();
-         }
-       });
-     } catch(e) {
-       console.log("TTS Error:", e);
-     }
-  };
-
-  const toggleRecording = async () => {
-    try {
-      if (recording) {
-        setIsVoiceMode(true);
-        await recording.stopAndUnloadAsync();
-        const uri = recording.getURI();
-        setRecording(null);
-        if (uri) {
-          setIsAiTyping(true);
-          const transcript = await transcribeVoice(uri);
-          sendMessage(transcript);
-        }
-      } else {
-        await Audio.requestPermissionsAsync();
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: true,
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: true,
-        });
-        const { recording: newRecording } = await Audio.Recording.createAsync(
-          Audio.RecordingOptionsPresets.HIGH_QUALITY
-        );
-        setRecording(newRecording);
-      }
-    } catch (err) {
-      console.error("Failed to start recording", err);
-    }
-  };
 
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [scrubMillis, setScrubMillis] = useState(0);
@@ -281,82 +199,42 @@ export default function PlayerScreen() {
               </Text>
             </View>
             {transcriptStatus === "completed" && (
-              <View style={{ flexDirection: "row", gap: 15 }}>
-                <TouchableOpacity onPress={() => setActiveTab("transcript")}>
-                  <Text style={{ color: activeTab === "transcript" ? "#a855f7" : "#71717a", fontWeight: "bold", fontSize: 12 }}>TRANSCRIPT</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setActiveTab("chat")}>
-                  <Text style={{ color: activeTab === "chat" ? "#a855f7" : "#71717a", fontWeight: "bold", fontSize: 12 }}>CHAT</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity onPress={() => router.push("/user/chat")} style={{ backgroundColor: "rgba(139, 92, 246, 0.2)", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 }}>
+                <Text style={{ color: "#a855f7", fontWeight: "bold", fontSize: 12 }}>Talk to AI 🤖</Text>
+              </TouchableOpacity>
             )}
           </View>
 
           <View style={styles.liveFeedContainer}>
-            {activeTab === "transcript" ? (
-              <>
-                {transcriptStatus === "processing" && (
-                  <View style={styles.logItem}>
-                     <Text style={styles.logText}>
-                        <Text style={styles.logTimestamp}>[{formatTime(displayMillis)}]</Text> <Text style={styles.logTypeInfo}>[PROCESSING]</Text> Audio is currently being transcribed in the background...
-                     </Text>
-                  </View>
-                )}
-                
-                {transcriptStatus === "completed" && transcriptText && (
-                   <ScrollView style={{ maxHeight: 300 }} nestedScrollEnabled>
-                     <Text style={{ color: "#e4e4e7", fontSize: 14, lineHeight: 22, fontFamily: "Raleway_400Regular" }}>
-                       {transcriptText}
-                     </Text>
-                   </ScrollView>
-                )}
+            {transcriptStatus === "processing" && (
+              <View style={styles.logItem}>
+                 <Text style={styles.logText}>
+                    <Text style={styles.logTimestamp}>[{formatTime(displayMillis)}]</Text> <Text style={styles.logTypeInfo}>[PROCESSING]</Text> Audio is currently being transcribed in the background...
+                 </Text>
+              </View>
+            )}
+            
+            {transcriptStatus === "completed" && transcriptText && (
+               <ScrollView style={{ maxHeight: 300 }} nestedScrollEnabled>
+                 <Text style={{ color: "#e4e4e7", fontSize: 14, lineHeight: 22, fontFamily: "Raleway_400Regular" }}>
+                   {transcriptText}
+                 </Text>
+               </ScrollView>
+            )}
 
-                {transcriptStatus === "error" && (
-                  <View style={styles.logItem}>
-                     <Text style={styles.logText}>
-                        <Text style={styles.logType}>[ERROR]</Text> Failed to transcribe audio or file size exceeded.
-                     </Text>
-                  </View>
-                )}
+            {transcriptStatus === "error" && (
+              <View style={styles.logItem}>
+                 <Text style={styles.logText}>
+                    <Text style={styles.logType}>[ERROR]</Text> Failed to transcribe audio or file size exceeded.
+                 </Text>
+              </View>
+            )}
 
-                {transcriptStatus === "idle" && (
-                  <View style={styles.logItem}>
-                     <Text style={styles.logText}>
-                        <Text style={styles.logTypeInfo}>[IDLE]</Text> Preparing AI pipeline...
-                     </Text>
-                  </View>
-                )}
-              </>
-            ) : (
-              <View style={{ flex: 1 }}>
-                <ScrollView style={{ maxHeight: 250, marginBottom: 10 }}>
-                  {chatMessages.length === 0 && (
-                    <Text style={{ color: "#71717a", textAlign: "center", marginTop: 20 }}>Ask me anything about this episode!</Text>
-                  )}
-                  {chatMessages.map((m, i) => (
-                    <View key={i} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", backgroundColor: m.role === "user" ? "#8b5cf6" : "#27272a", padding: 10, borderRadius: 10, marginBottom: 10, maxWidth: "85%" }}>
-                      <Text style={{ color: "white", fontSize: 13, lineHeight: 18 }}>{m.text}</Text>
-                    </View>
-                  ))}
-                  {isAiTyping && <Text style={{ color: "#a1a1aa", fontSize: 12, marginTop: 5 }}>Podex AI is thinking...</Text>}
-                </ScrollView>
-
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <TextInput 
-                     style={{ flex: 1, backgroundColor: "#27272a", color: "white", borderRadius: 20, paddingHorizontal: 15, paddingVertical: 10, marginRight: 10, fontSize: 14 }}
-                     placeholder="Ask about the podcast..."
-                     placeholderTextColor="#71717a"
-                     value={inputText}
-                     onChangeText={setInputText}
-                     onSubmitEditing={() => sendMessage(inputText)}
-                  />
-                  <TouchableOpacity onPress={toggleRecording} style={{ backgroundColor: recording ? "#ef4444" : "#27272a", padding: 12, borderRadius: 20 }}>
-                     <Text style={{ fontSize: 16 }}>{recording ? "⏹" : "🎤"}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => sendMessage(inputText)} style={{ backgroundColor: "#8b5cf6", padding: 12, borderRadius: 20, marginLeft: 10 }}>
-                     <Text style={{ fontSize: 16 }}>↗️</Text>
-                  </TouchableOpacity>
-                </View>
+            {transcriptStatus === "idle" && (
+              <View style={styles.logItem}>
+                 <Text style={styles.logText}>
+                    <Text style={styles.logTypeInfo}>[IDLE]</Text> Preparing AI pipeline...
+                 </Text>
               </View>
             )}
           </View>
