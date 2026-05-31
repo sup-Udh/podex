@@ -3,6 +3,8 @@
 import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from "expo-av";
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { Episode } from "../services/episodes";
+import { useAuth } from "../hooks/useAuth";
+import { supabase } from "../services/supabase";
 
 interface PlayerContextType {
   currentEpisode: Episode | null;
@@ -25,6 +27,25 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [positionMillis, setPositionMillis] = useState(0);
   const [durationMillis, setDurationMillis] = useState(0);
+
+  const { session } = useAuth();
+  const lastSyncRef = useRef(0);
+
+  const syncProgressToDB = async (userId: string, ep: Episode, position: number, duration: number) => {
+    try {
+      await supabase.from("user_listening_history").upsert({
+        user_id: userId,
+        podcast_id: ep.podcastId,
+        episode_id: ep.id,
+        episode_data: ep,
+        position_millis: position,
+        duration_millis: duration,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id, episode_id" });
+    } catch (error) {
+      console.error("Failed to sync progress", error);
+    }
+  };
 
   useEffect(() => {
     // Configure audio for background playback
@@ -67,6 +88,20 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             if (status.durationMillis) {
               setDurationMillis(status.durationMillis);
             }
+
+            // Sync to Supabase every 10 seconds
+            if (session?.user && status.isPlaying) {
+              const now = Date.now();
+              if (now - lastSyncRef.current > 10000) {
+                lastSyncRef.current = now;
+                syncProgressToDB(
+                  session.user.id,
+                  episode,
+                  status.positionMillis,
+                  status.durationMillis || 0
+                );
+              }
+            }
           } else if (status.error) {
             console.log("Playback Error: ", status.error);
           }
@@ -86,6 +121,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     if (isPlaying) {
       await sound.pauseAsync();
       setIsPlaying(false);
+      // Final sync on pause
+      if (session?.user && currentEpisode) {
+        syncProgressToDB(session.user.id, currentEpisode, positionMillis, durationMillis);
+      }
     } else {
       await sound.playAsync();
       setIsPlaying(true);
@@ -110,6 +149,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   };
 
   const closePlayer = async () => {
+    // Final sync on close
+    if (session?.user && currentEpisode) {
+      await syncProgressToDB(session.user.id, currentEpisode, positionMillis, durationMillis);
+    }
+
     if (sound) {
       await sound.stopAsync();
       await sound.unloadAsync();

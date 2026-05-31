@@ -18,6 +18,7 @@ import SwipeNavigator from "../../components/SwipeNavigator";
 import PremiumBackground from "../../components/PremiumBackground";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useAuth } from "../../hooks/useAuth";
+import { usePlayer } from "../../contexts/PlayerContext";
 import { supabase } from "../../services/supabase";
 
 const { width } = Dimensions.get("window");
@@ -27,7 +28,9 @@ import { styles } from "../../styles/libraryStyles";
 export default function LibraryScreen() {
   const router = useRouter();
   const { session } = useAuth();
+  const { playEpisode } = usePlayer();
   const [podcasts, setPodcasts] = useState<any[]>([]);
+  const [listeningHistory, setListeningHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
@@ -41,14 +44,16 @@ export default function LibraryScreen() {
   const loadPodcasts = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("user_podcasts")
-        .select("*")
-        .eq("user_id", session?.user.id)
-        .order("created_at", { ascending: false });
+      const [podsRes, histRes] = await Promise.all([
+        supabase.from("user_podcasts").select("*").eq("user_id", session?.user.id).order("created_at", { ascending: false }),
+        supabase.from("user_listening_history").select("*").eq("user_id", session?.user.id).order("updated_at", { ascending: false }).limit(30)
+      ]);
 
-      if (!error && data) {
-        setPodcasts(data);
+      if (!podsRes.error && podsRes.data) {
+        setPodcasts(podsRes.data);
+      }
+      if (!histRes.error && histRes.data) {
+        setListeningHistory(histRes.data);
       }
     } catch (error) {
       console.log(error);
@@ -57,8 +62,16 @@ export default function LibraryScreen() {
     }
   };
 
-  const activeListening = podcasts.slice(0, 2);
-  const knowledgeQueue = podcasts.slice(0, 3); // Fallback to whatever they have
+  const currentlyListening = listeningHistory.filter(item => {
+    if (!item.duration_millis) return true;
+    return (item.position_millis / item.duration_millis) < 0.95;
+  }).slice(0, 5);
+
+  const previouslyListened = listeningHistory.filter(item => {
+    if (!item.duration_millis) return false;
+    return (item.position_millis / item.duration_millis) >= 0.95;
+  }).slice(0, 5);
+
   const subscriptions = podcasts;
 
   return (
@@ -78,54 +91,79 @@ export default function LibraryScreen() {
              <ActivityIndicator size="large" color="#8b5cf6" style={{ marginTop: 60 }} />
           ) : (
             <>
-              {/* Section A: Active Listening */}
-              <Animated.View entering={FadeInDown.delay(100).duration(600)} style={styles.section}>
-                <Text style={styles.sectionTitle}>Active Listening</Text>
-                
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16 }}>
-                  {activeListening.map((podcast, i) => (
-                    <View key={i} style={styles.activeCard}>
-                      <Image source={{ uri: podcast.artwork_url }} style={styles.activeImage} />
-                      <View style={styles.activeContent}>
-                        <Text style={styles.activePodcastName} numberOfLines={1}>{podcast.collection_name}</Text>
-                        <Text style={styles.activeEpisodeTitle} numberOfLines={2}>#142 - The Future of Human Evolution</Text>
-                        
-                        <View style={styles.progressContainer}>
-                          <View style={[styles.progressBar, { width: i === 0 ? "65%" : "30%" }]} />
+              {/* Section A: Currently Listening */}
+              {currentlyListening.length > 0 && (
+                <Animated.View entering={FadeInDown.delay(100).duration(600)} style={styles.section}>
+                  <Text style={styles.sectionTitle}>Currently Listening</Text>
+                  
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16 }}>
+                    {currentlyListening.map((item, i) => {
+                      const ep = item.episode_data;
+                      const progress = item.duration_millis > 0 ? (item.position_millis / item.duration_millis) * 100 : 0;
+                      const minsLeft = item.duration_millis > 0 ? Math.round((item.duration_millis - item.position_millis) / 60000) : 0;
+                      
+                      return (
+                        <View key={item.id} style={styles.activeCard}>
+                          <Image source={{ uri: ep.imageUrl }} style={styles.activeImage} />
+                          <View style={styles.activeContent}>
+                            <Text style={styles.activePodcastName} numberOfLines={1}>{ep.podcastName}</Text>
+                            <Text style={styles.activeEpisodeTitle} numberOfLines={2}>{ep.title}</Text>
+                            
+                            <View style={styles.progressContainer}>
+                              <View style={[styles.progressBar, { width: `${progress}%` }]} />
+                            </View>
+                            <Text style={styles.progressText}>{minsLeft > 0 ? `${minsLeft} mins left` : "Listening..."}</Text>
+
+                            <TouchableOpacity 
+                              style={styles.resumeButton} 
+                              activeOpacity={0.8} 
+                              onPress={() => {
+                                playEpisode(ep);
+                                router.push("/user/player" as any);
+                              }}
+                            >
+                              <Text style={styles.resumeButtonText}>▶ Resume</Text>
+                            </TouchableOpacity>
+                          </View>
                         </View>
-                        <Text style={styles.progressText}>{i === 0 ? "45 mins left" : "1 hr 12 mins left"}</Text>
+                      );
+                    })}
+                  </ScrollView>
+                </Animated.View>
+              )}
 
-                        <TouchableOpacity style={styles.resumeButton} activeOpacity={0.8} onPress={() => router.push("/user/player" as any)}>
-                          <Text style={styles.resumeButtonText}>▶ Resume</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ))}
-                </ScrollView>
-              </Animated.View>
+              {/* Section B: Previously Listened */}
+              {previouslyListened.length > 0 && (
+                <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.section}>
+                  <View style={styles.sectionHeaderRow}>
+                    <Text style={styles.sectionTitle}>Previously Listened</Text>
+                  </View>
 
-              {/* Section B: The Knowledge Queue */}
-              <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.section}>
-                <View style={styles.sectionHeaderRow}>
-                  <Text style={styles.sectionTitle}>The Knowledge Queue</Text>
-                  <Text style={styles.aiCuratedBadge}>AI CURATED</Text>
-                </View>
-
-                <View style={styles.queueContainer}>
-                  {knowledgeQueue.map((podcast, i) => (
-                    <View key={i} style={styles.queueItem}>
-                      <Image source={{ uri: podcast.artwork_url }} style={styles.queueImage} />
-                      <View style={styles.queueInfo}>
-                        <Text style={styles.queueEpisode} numberOfLines={1}>Optimizing Sleep & Performance</Text>
-                        <Text style={styles.queueReason}>Queued because you searched "Dopamine"</Text>
-                      </View>
-                      <TouchableOpacity style={styles.queuePlayButton} onPress={() => router.push("/user/player" as any)}>
-                        <Text style={styles.queuePlayIcon}>▶</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-              </Animated.View>
+                  <View style={styles.queueContainer}>
+                    {previouslyListened.map((item, i) => {
+                      const ep = item.episode_data;
+                      return (
+                        <View key={item.id} style={styles.queueItem}>
+                          <Image source={{ uri: ep.imageUrl }} style={styles.queueImage} />
+                          <View style={styles.queueInfo}>
+                            <Text style={styles.queueEpisode} numberOfLines={1}>{ep.title}</Text>
+                            <Text style={styles.queueReason} numberOfLines={1}>{ep.podcastName}</Text>
+                          </View>
+                          <TouchableOpacity 
+                            style={styles.queuePlayButton} 
+                            onPress={() => {
+                              playEpisode(ep);
+                              router.push("/user/player" as any);
+                            }}
+                          >
+                            <Text style={styles.queuePlayIcon}>▶</Text>
+                          </TouchableOpacity>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </Animated.View>
+              )}
 
               {/* Section C: Subscriptions */}
               <Animated.View entering={FadeInDown.delay(300).duration(600)} style={[styles.section, { marginBottom: 100 }]}>

@@ -34,6 +34,7 @@ export default function Dashboard() {
   
   const [podcasts, setPodcasts] = useState<any[]>([]);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
+  const [listeningHistory, setListeningHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(10);
 
@@ -41,9 +42,26 @@ export default function Dashboard() {
     useCallback(() => {
       if (session?.user) {
         checkCacheAndLoad();
+        loadListeningHistory();
       }
     }, [session])
   );
+
+  const loadListeningHistory = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("user_listening_history")
+        .select("*")
+        .eq("user_id", session?.user.id)
+        .order("updated_at", { ascending: false })
+        .limit(10);
+      if (!error && data) {
+        setListeningHistory(data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const checkCacheAndLoad = async () => {
     try {
@@ -157,15 +175,70 @@ export default function Dashboard() {
               </View>
 
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
-                {podcasts.map((sub) => (
-                  <TouchableOpacity key={sub.id} style={styles.subCard} onPress={() => router.push(`/user/podcast/${sub.collection_id}` as any)}>
-                    <Image source={{ uri: sub.artwork_url }} style={styles.subImage} contentFit="cover" />
-                    <Text style={styles.subTitle} numberOfLines={1}>{sub.collection_name}</Text>
-                    <View style={styles.subUnderline} />
-                  </TouchableOpacity>
-                ))}
+                {podcasts.map((sub) => {
+                  const historyEntry = listeningHistory.find(item => item.podcast_id === sub.collection_id);
+                  let progress = 0;
+                  if (historyEntry && historyEntry.duration_millis > 0) {
+                    progress = (historyEntry.position_millis / historyEntry.duration_millis) * 100;
+                  }
+
+                  return (
+                    <TouchableOpacity key={sub.id} style={styles.subCard} onPress={() => router.push(`/user/podcast/${sub.collection_id}` as any)}>
+                      <Image source={{ uri: sub.artwork_url }} style={styles.subImage} contentFit="cover" />
+                      <Text style={styles.subTitle} numberOfLines={1}>{sub.collection_name}</Text>
+                      {progress > 0 ? (
+                        <View style={{ width: "100%", height: 2, backgroundColor: "rgba(255,255,255,0.1)", marginTop: 6, borderRadius: 1 }}>
+                          <View style={{ width: `${progress}%`, height: "100%", backgroundColor: "#8b5cf6", borderRadius: 1 }} />
+                        </View>
+                      ) : (
+                        <View style={{ height: 8 }} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
               </ScrollView>
             </Animated.View>
+
+            {/* Continue Listening */}
+            {listeningHistory.length > 0 && (
+              <Animated.View entering={FadeInDown.delay(150).duration(600)} style={[styles.section, { paddingHorizontal: 0, marginTop: 16 }]}>
+                <View style={styles.sectionHeaderRow}>
+                  <Text style={styles.sectionTitle}>Continue Listening</Text>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
+                  {listeningHistory.map((item) => {
+                    const ep = item.episode_data;
+                    const progress = item.duration_millis > 0 ? (item.position_millis / item.duration_millis) * 100 : 0;
+                    
+                    return (
+                      <TouchableOpacity 
+                        key={item.id} 
+                        style={{ width: 280, backgroundColor: "rgba(255,255,255,0.03)", borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.05)" }}
+                        onPress={() => {
+                          playEpisode(ep);
+                          router.push("/user/player" as any);
+                        }}
+                      >
+                        <Image source={{ uri: ep.imageUrl }} style={{ width: "100%", height: 140 }} contentFit="cover" />
+                        
+                        <View style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 4, backgroundColor: "rgba(255,255,255,0.1)" }}>
+                          <View style={{ width: `${progress}%`, height: "100%", backgroundColor: "#8b5cf6" }} />
+                        </View>
+                        
+                        <View style={{ padding: 12 }}>
+                          <Text style={{ color: "#a1a1aa", fontSize: 12, fontFamily: "Raleway_600SemiBold", marginBottom: 4 }} numberOfLines={1}>{ep.podcastName}</Text>
+                          <Text style={{ color: "#fff", fontSize: 14, fontFamily: "Raleway_700Bold" }} numberOfLines={2}>{ep.title}</Text>
+                        </View>
+                        
+                        <View style={{ position: "absolute", top: 12, right: 12, width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", alignItems: "center" }}>
+                          <Text style={{ color: "#fff", fontSize: 14 }}>▶</Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </Animated.View>
+            )}
 
             {/* Latest Episodes */}
             <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.section}>
