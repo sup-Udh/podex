@@ -72,6 +72,8 @@ export default function Dashboard() {
         setPodcasts(JSON.parse(cachedPods));
         setEpisodes(JSON.parse(cachedEps));
         setLoading(false);
+        // Fetch fresh data silently to get newly posted eps
+        loadDashboardData(true);
       } else {
         loadDashboardData();
       }
@@ -80,9 +82,9 @@ export default function Dashboard() {
     }
   };
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       // 1. Fetch user's podcasts
       const { data, error } = await supabase
         .from("user_podcasts")

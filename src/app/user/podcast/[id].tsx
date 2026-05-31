@@ -52,13 +52,13 @@ export default function PodcastDetails() {
 
       setPodcast(data);
 
-      // Fetch all episodes (increase limit to ensure we get early ones)
-      const eps = await fetchEpisodesFromFeed(data.feed_url, 500); 
+      // Fetch all episodes
+      const eps = await fetchEpisodesFromFeed(data.feed_url, 10000); 
       
-      // Reverse to show from Ep 1 (oldest first)
-      const reversedEps = eps.reverse();
+      // Sort by date ascending to show from Ep 1 (oldest first)
+      eps.sort((a, b) => new Date(a.pubDate).getTime() - new Date(b.pubDate).getTime());
 
-      const enhancedEps = reversedEps.map(e => ({
+      const enhancedEps = eps.map(e => ({
         ...e,
         podcastName: data.collection_name,
         imageUrl: data.artwork_url,
