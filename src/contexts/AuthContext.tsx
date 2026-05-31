@@ -1,5 +1,6 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+// keeps the session in context
 import { Session, User } from '@supabase/supabase-js';
+import { createContext, ReactNode, useEffect, useState } from 'react';
 import { supabase } from '../services/supabase';
 
 type AuthContextType = {

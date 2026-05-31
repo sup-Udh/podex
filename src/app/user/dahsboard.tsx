@@ -134,11 +134,11 @@ export default function Dashboard() {
 
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
                 {podcasts.map((sub) => (
-                  <View key={sub.id} style={styles.subCard}>
+                  <TouchableOpacity key={sub.id} style={styles.subCard} onPress={() => router.push(`/user/podcast/${sub.collection_id}` as any)}>
                     <Image source={{ uri: sub.artwork_url }} style={styles.subImage} contentFit="cover" />
                     <Text style={styles.subTitle} numberOfLines={1}>{sub.collection_name}</Text>
                     <View style={styles.subUnderline} />
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </ScrollView>
             </Animated.View>
@@ -168,7 +168,10 @@ export default function Dashboard() {
                     <View style={styles.footerLeft}>
                       <Text style={styles.footerTime}>{ep.duration ? ep.duration : new Date(ep.pubDate).toLocaleDateString()}</Text>
                     </View>
-                    <TouchableOpacity style={styles.playButtonMini} onPress={() => playEpisode(ep)}>
+                    <TouchableOpacity style={styles.playButtonMini} onPress={() => {
+                      playEpisode(ep);
+                      router.push("/user/player" as any);
+                    }}>
                       <LinearGradient colors={["#4b4073", "#2c244b"]} style={StyleSheet.absoluteFill} />
                       <Text style={styles.playButtonMiniIcon}>▶</Text>
                     </TouchableOpacity>

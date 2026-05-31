@@ -1,3 +1,5 @@
+// this also saves to the user database of the selected things.
+
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -5,25 +7,25 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 
 import {
-    ActivityIndicator,
-    Dimensions,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import Animated, {
-    FadeIn,
-    FadeInDown,
-    useAnimatedStyle,
-    withTiming,
+  FadeIn,
+  FadeInDown,
+  useAnimatedStyle,
+  withTiming,
 } from "react-native-reanimated";
 
-import { getTrendingPodcasts } from "../../services/podcast";
 import { useAuth } from "../../hooks/useAuth";
+import { getTrendingPodcasts } from "../../services/podcast";
 import { supabase } from "../../services/supabase";
 
 const { width } = Dimensions.get("window");
