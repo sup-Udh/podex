@@ -88,9 +88,22 @@ export default function SearchScreen() {
       return;
     }
 
+    const { data: existing } = await supabase
+      .from("user_podcasts")
+      .select("id")
+      .eq("user_id", session.user.id)
+      .eq("collection_id", podcast.collectionId)
+      .maybeSingle();
+
+    if (existing) {
+      Alert.alert("Already Added", `${podcast.collectionName} is already in your library.`);
+      setSavingId(null);
+      return;
+    }
+
     const { error } = await supabase.from("user_podcasts").insert([podcastData]);
 
-    if (error && error.code !== "23505") { // Ignore unique constraint errors
+    if (error) {
       console.error("Insert Error:", error);
       Alert.alert("Error", "Could not save podcast: " + JSON.stringify(error));
     } else {
