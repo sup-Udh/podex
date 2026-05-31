@@ -394,18 +394,23 @@ export const styles = StyleSheet.create({
   },
   aiAskContainer: {
     marginHorizontal: 24,
-    marginTop: 20,
+    marginTop: 10,
     marginBottom: 60,
-    borderRadius: 24,
+    borderRadius: 28,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(139, 92, 246, 0.4)",
+    borderColor: "rgba(139, 92, 246, 0.6)",
+    backgroundColor: "rgba(139, 92, 246, 0.1)",
+    shadowColor: "#8b5cf6",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
   },
   aiAskInner: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    height: 56,
   },
   aiAskIcon: {
     fontSize: 20,
@@ -415,6 +420,11 @@ export const styles = StyleSheet.create({
     flex: 1,
     color: "#fff",
     fontSize: 15,
-    fontFamily: "Raleway_600SemiBold",
+    fontFamily: "Raleway_400Regular",
   },
+  aiAskMic: {
+    fontSize: 18,
+    color: "#a1a1aa",
+    marginLeft: 12,
+  }
 });

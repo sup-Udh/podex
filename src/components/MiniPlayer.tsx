@@ -8,7 +8,14 @@ import Animated, { FadeInUp, FadeOutDown } from "react-native-reanimated";
 export default function MiniPlayer() {
   const router = useRouter();
   const pathname = usePathname();
-  const { currentEpisode, isPlaying, togglePlayPause, positionMillis, durationMillis } = usePlayer();
+  const { currentEpisode, isPlaying, togglePlayPause, positionMillis, durationMillis, closePlayer } = usePlayer();
+
+  const formatTime = (millis: number) => {
+    const totalSeconds = Math.floor(millis / 1000);
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  };
 
   // Do not show mini player if nothing is playing, or if we are already on the full player screen
   if (!currentEpisode || pathname === "/user/player") {
@@ -31,11 +38,20 @@ export default function MiniPlayer() {
         
         <View style={styles.infoContainer}>
           <Text style={styles.title} numberOfLines={1}>{currentEpisode.title}</Text>
-          <Text style={styles.podcastName} numberOfLines={1}>{currentEpisode.podcastName}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Text style={styles.podcastName} numberOfLines={1}>{currentEpisode.podcastName}</Text>
+            <Text style={styles.timeText}>
+              {" • "}{formatTime(positionMillis)} / {formatTime(durationMillis)}
+            </Text>
+          </View>
         </View>
 
         <TouchableOpacity style={styles.playPauseBtn} onPress={togglePlayPause}>
           <Text style={styles.playPauseIcon}>{isPlaying ? "||" : "▶"}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.closeBtn} onPress={closePlayer}>
+          <Text style={styles.closeIcon}>✕</Text>
         </TouchableOpacity>
       </TouchableOpacity>
 
@@ -101,8 +117,24 @@ const styles = StyleSheet.create({
   },
   playPauseIcon: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 14,
     marginLeft: 2,
+  },
+  closeBtn: {
+    width: 32,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 4,
+  },
+  closeIcon: {
+    color: "#888",
+    fontSize: 18,
+  },
+  timeText: {
+    color: "#8b5cf6",
+    fontSize: 10,
+    fontFamily: "Raleway_600SemiBold",
   },
   progressTrack: {
     height: 3,

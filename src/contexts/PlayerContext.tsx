@@ -14,6 +14,7 @@ interface PlayerContextType {
   seekForward: () => Promise<void>;
   seekBackward: () => Promise<void>;
   seekTo: (millis: number) => Promise<void>;
+  closePlayer: () => Promise<void>;
 }
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
@@ -108,6 +109,18 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     await sound.setPositionAsync(millis);
   };
 
+  const closePlayer = async () => {
+    if (sound) {
+      await sound.stopAsync();
+      await sound.unloadAsync();
+      setSound(null);
+    }
+    setCurrentEpisode(null);
+    setIsPlaying(false);
+    setPositionMillis(0);
+    setDurationMillis(0);
+  };
+
   return (
     <PlayerContext.Provider
       value={{
@@ -120,6 +133,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         seekForward,
         seekBackward,
         seekTo,
+        closePlayer,
       }}
     >
       {children}

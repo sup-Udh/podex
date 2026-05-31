@@ -107,25 +107,30 @@ export default function SearchScreen() {
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           
-          <Animated.View entering={FadeInDown.duration(600)} style={styles.searchHeader}>
-            <Text style={[styles.headerTitle, { color: "#d1d1d1" }]}>Search Everything You've Heard</Text>
-            <Text style={styles.headerSubtitle}>Ask your podcast memory anything.</Text>
+          <Animated.View entering={FadeInDown.duration(600)} style={{ alignItems: "center", marginBottom: 32 }}>
+            <Text style={{ color: "#fff", fontSize: 24, fontFamily: "Raleway_700Bold", marginBottom: 8, textAlign: "center" }}>
+              Search Everything You've Heard
+            </Text>
+            <Text style={{ color: "#5c8df6", fontSize: 14, fontFamily: "Raleway_600SemiBold", textAlign: "center" }}>
+              Ask your podcast memory anything.
+            </Text>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(100).duration(600)} style={styles.searchBarContainer}>
-            <BlurView intensity={40} tint="dark" style={styles.searchBlur}>
-              <Text style={styles.searchIcon}>🔍</Text>
+          <Animated.View entering={FadeInDown.delay(100).duration(600)} style={{ paddingHorizontal: 24, marginBottom: 20 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.05)", height: 56, borderRadius: 28, paddingHorizontal: 20, borderWidth: 1, borderColor: "rgba(255,255,255,0.08)" }}>
+              <Text style={{ color: "#8b5cf6", fontSize: 18, marginRight: 12 }}>🔍</Text>
               <TextInput
-                style={styles.searchInput}
-                placeholder="Search everything you've ever heard..."
-                placeholderTextColor="#8e8e8e"
+                style={{ flex: 1, color: "#fff", fontSize: 15, fontFamily: "Raleway_400Regular" }}
+                placeholder="Health protocols for long"
+                placeholderTextColor="#666"
                 value={query}
                 onChangeText={setQuery}
                 onSubmitEditing={handleSearch}
                 returnKeyType="search"
                 autoCorrect={false}
               />
-            </BlurView>
+              <Text style={{ color: "#666", fontSize: 18, marginLeft: 12 }}>🎙️</Text>
+            </View>
           </Animated.View>
 
           {/* If searching, show results */}
@@ -134,8 +139,6 @@ export default function SearchScreen() {
               {loading ? (
                 <ActivityIndicator size="large" color="#8b5cf6" style={{ marginTop: 40 }} />
               ) : results.length > 0 ? (
-                results.map((pod) => (
-                  <View key={pod.collectionId} style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.03)", padding: 12, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.05)" }}>
                 <View style={{ paddingHorizontal: 24, gap: 16 }}>
                   {results.map((item, idx) => (
                     <Animated.View key={item.collectionId + idx} entering={FadeInDown.delay(idx * 100).duration(500)}>

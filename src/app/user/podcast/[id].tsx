@@ -25,6 +25,7 @@ export default function PodcastDetails() {
 
   const [podcast, setPodcast] = useState<any>(null);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
+  const [visibleCount, setVisibleCount] = useState(10);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -50,9 +51,13 @@ export default function PodcastDetails() {
 
       setPodcast(data);
 
-      // Fetch all episodes
-      const eps = await fetchEpisodesFromFeed(data.feed_url, 50); // Get up to 50 episodes
-      const enhancedEps = eps.map(e => ({
+      // Fetch all episodes (increase limit to ensure we get early ones)
+      const eps = await fetchEpisodesFromFeed(data.feed_url, 500); 
+      
+      // Reverse to show from Ep 1 (oldest first)
+      const reversedEps = eps.reverse();
+
+      const enhancedEps = reversedEps.map(e => ({
         ...e,
         podcastName: data.collection_name,
         imageUrl: data.artwork_url,
@@ -99,7 +104,7 @@ export default function PodcastDetails() {
               <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.episodesSection}>
                 <Text style={styles.sectionTitle}>All Episodes</Text>
                 
-                {episodes.map((ep, idx) => (
+                {episodes.slice(0, visibleCount).map((ep, idx) => (
                   <View key={ep.id + idx} style={styles.episodeCard}>
                     <View style={styles.episodeInfo}>
                       <Text style={styles.episodeTitle} numberOfLines={2}>{ep.title}</Text>
@@ -120,6 +125,15 @@ export default function PodcastDetails() {
                     </TouchableOpacity>
                   </View>
                 ))}
+
+                {visibleCount < episodes.length && (
+                  <TouchableOpacity 
+                    style={{ alignSelf: "center", marginTop: 24, paddingVertical: 12, paddingHorizontal: 32, borderRadius: 24, backgroundColor: "rgba(139, 92, 246, 0.2)", borderWidth: 1, borderColor: "#8b5cf6" }}
+                    onPress={() => setVisibleCount(prev => prev + 20)}
+                  >
+                    <Text style={{ color: "#fff", fontFamily: "Raleway_700Bold" }}>Load More Episodes</Text>
+                  </TouchableOpacity>
+                )}
               </Animated.View>
             </>
           )}
