@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -191,6 +192,73 @@ export default function Dashboard() {
                   <Text style={{ color: "#fff", fontFamily: "Raleway_700Bold" }}>Load More Episodes</Text>
                 </TouchableOpacity>
               )}
+            </Animated.View>
+
+            {/* Extracted Insights (Dummy Mode) */}
+            <Animated.View entering={FadeInDown.delay(300).duration(600)} style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>Extracted Insights</Text>
+              </View>
+              <View style={styles.insightsList}>
+                {/* Card 1: Huberman */}
+                <View style={styles.insightCard}>
+                  <View style={styles.insightHeader}>
+                    <Image source={{ uri: "https://is1-ssl.mzstatic.com/image/thumb/Podcasts113/v4/f2/21/fa/f221fabd-017f-5125-633b-f1fe4f39802a/mza_182995249085044287.jpg/600x600bb.jpg" }} style={styles.insightAvatar} />
+                    <View style={styles.insightAuthorInfo}>
+                      <Text style={styles.insightAuthor}>ANDREW HUBERMAN</Text>
+                      <Text style={styles.insightSource}>Huberman Lab • 42:15</Text>
+                    </View>
+                    <Text style={styles.insightMenuIcon}>⋮</Text>
+                  </View>
+                  <Text style={styles.insightQuote}>
+                    "The primary driver of neuroplasticity isn't just repetition, it's the high-intensity focus followed by deep, non-sleep rest."
+                  </Text>
+                  <View style={styles.insightScrubberContainer}>
+                    <View style={styles.scrubberIconPlaceholder}><Text style={{color:"#888"}}>|||</Text></View>
+                    <View style={styles.scrubberLine}>
+                      <View style={styles.scrubberProgress} />
+                      <View style={styles.scrubberHandle} />
+                    </View>
+                    <Text style={{color:"#8b5cf6", fontSize:18}}>⚙</Text>
+                  </View>
+                </View>
+                
+                {/* Card 2: Naval */}
+                <View style={styles.insightCard}>
+                  <View style={styles.insightHeader}>
+                    <Image source={{ uri: "https://is4-ssl.mzstatic.com/image/thumb/Podcasts113/v4/a5/d8/56/a5d85600-e1df-9d58-9be5-943f9a7d23a4/mza_4826189914781442145.png/600x600bb.jpg" }} style={styles.insightAvatar} />
+                    <View style={styles.insightAuthorInfo}>
+                      <Text style={styles.insightAuthor}>NAVAL RAVIKANT</Text>
+                      <Text style={styles.insightSource}>Joe Rogan Experience • 01:12:04</Text>
+                    </View>
+                    <Text style={styles.insightMenuIcon}>⋮</Text>
+                  </View>
+                  <Text style={styles.insightQuote}>
+                    "Specific knowledge is the knowledge that you cannot be trained for. If society can train you, it can train someone else, and replace you."
+                  </Text>
+                  <View style={styles.insightScrubberContainer}>
+                    <View style={styles.scrubberIconPlaceholder}><Text style={{color:"#888"}}>|||</Text></View>
+                    <View style={styles.scrubberLine}>
+                      <View style={[styles.scrubberProgress, {width: "20%"}]} />
+                      <View style={[styles.scrubberHandle, {left: "20%"}]} />
+                    </View>
+                    <Text style={{color:"#8b5cf6", fontSize:16}}>🔗</Text>
+                  </View>
+                </View>
+              </View>
+            </Animated.View>
+
+            {/* Ask Podex AI */}
+            <Animated.View entering={FadeInDown.delay(400).duration(600)} style={styles.aiAskContainer}>
+              <LinearGradient colors={["rgba(139, 92, 246, 0.2)", "rgba(20, 20, 25, 0.4)"]} style={StyleSheet.absoluteFill} />
+              <View style={styles.aiAskInner}>
+                <Text style={styles.aiAskIcon}>✨</Text>
+                <TextInput 
+                  style={styles.aiAskInput}
+                  placeholder="Ask Podex AI about your podcasts..."
+                  placeholderTextColor="#8a8a8a"
+                />
+              </View>
             </Animated.View>
           </>
         )}

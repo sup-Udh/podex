@@ -330,4 +330,91 @@ export const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.1)",
     marginHorizontal: 16,
   },
+  feedCard: {
+    borderRadius: 20,
+    padding: 20,
+    overflow: "hidden",
+  },
+  feedCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  feedCardImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    marginRight: 16,
+  },
+  feedCardTitleContainer: {
+    flex: 1,
+  },
+  feedCardContext: {
+    color: "#a1a1aa",
+    fontSize: 12,
+    fontFamily: "Raleway_600SemiBold",
+    marginBottom: 4,
+  },
+  feedCardTitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontFamily: "Raleway_700Bold",
+  },
+  feedCardSnippet: {
+    color: "#e4e4e7",
+    fontSize: 14,
+    fontFamily: "Raleway_400Regular",
+    lineHeight: 22,
+  },
+  feedCardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  footerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  footerTime: {
+    color: "#71717a",
+    fontSize: 12,
+    fontFamily: "Raleway_600SemiBold",
+  },
+  playButtonMini: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  playButtonMiniIcon: {
+    color: "#fff",
+    fontSize: 14,
+    marginLeft: 3,
+  },
+  aiAskContainer: {
+    marginHorizontal: 24,
+    marginTop: 20,
+    marginBottom: 60,
+    borderRadius: 24,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.4)",
+  },
+  aiAskInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  aiAskIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  aiAskInput: {
+    flex: 1,
+    color: "#fff",
+    fontSize: 15,
+    fontFamily: "Raleway_600SemiBold",
+  },
 });

@@ -34,83 +34,20 @@ import { styles } from "../../styles/searchStyles";
 
 const { width } = Dimensions.get("window");
 
-// Custom Component: Floating Particle
-const Particle = ({ delay, startX, startY, endX, endY, size, opacity }: any) => {
-  const translateX = useSharedValue(startX);
-  const translateY = useSharedValue(startY);
-  const scale = useSharedValue(0.8);
-
-  useEffect(() => {
-    translateX.value = withDelay(
-      delay,
-      withRepeat(
-        withTiming(endX, { duration: 4000 + Math.random() * 2000, easing: Easing.inOut(Easing.ease) }),
-        -1,
-        true
-      )
-    );
-    translateY.value = withDelay(
-      delay,
-      withRepeat(
-        withTiming(endY, { duration: 5000 + Math.random() * 2000, easing: Easing.inOut(Easing.ease) }),
-        -1,
-        true
-      )
-    );
-    scale.value = withDelay(
-      delay,
-      withRepeat(
-        withSequence(
-          withTiming(1.2, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-          withTiming(0.8, { duration: 2000, easing: Easing.inOut(Easing.ease) })
-        ),
-        -1,
-        true
-      )
-    );
-  }, []);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { translateX: translateX.value },
-        { translateY: translateY.value },
-        { scale: scale.value }
-      ],
-    };
-  });
-
+// Custom Component: Dot Grid Background
+const GridBackground = () => {
   return (
-    <Animated.View
-      style={[
-        {
-          position: "absolute",
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: "#8b5cf6",
-          opacity: opacity,
-          shadowColor: "#8b5cf6",
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 1,
-          shadowRadius: size,
-        },
-        animatedStyle,
-      ]}
-    />
-  );
-};
-
-// Custom Component: Particle Engine Background
-const ParticleBackground = () => {
-  return (
-    <View style={StyleSheet.absoluteFill}>
-      <Particle delay={0} startX={20} startY={20} endX={60} endY={80} size={15} opacity={0.3} />
-      <Particle delay={500} startX={150} startY={80} endX={100} endY={20} size={10} opacity={0.4} />
-      <Particle delay={1000} startX={250} startY={10} endX={280} endY={60} size={12} opacity={0.2} />
-      <Particle delay={1500} startX={40} startY={120} endX={10} endY={150} size={8} opacity={0.5} />
-      <Particle delay={2000} startX={200} startY={140} endX={240} endY={180} size={18} opacity={0.25} />
-      <Particle delay={2500} startX={100} startY={160} endX={130} endY={200} size={14} opacity={0.35} />
+    <View style={[StyleSheet.absoluteFill, { backgroundColor: "#121214", overflow: "hidden" }]}>
+      {/* Create a simple dot pattern */}
+      <View style={{ flex: 1, opacity: 0.3 }}>
+        {[...Array(40)].map((_, rowIndex) => (
+          <View key={rowIndex} style={{ flexDirection: "row", justifyContent: "space-around", marginBottom: 30 }}>
+            {[...Array(15)].map((_, colIndex) => (
+              <View key={colIndex} style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: "#444" }} />
+            ))}
+          </View>
+        ))}
+      </View>
     </View>
   );
 };
@@ -166,14 +103,13 @@ export default function SearchScreen() {
   return (
     <SwipeNavigator>
       <View style={styles.container}>
-        <LinearGradient colors={["#000000", "#050014", "#000000"]} style={StyleSheet.absoluteFill} />
-        <View style={styles.glowBackground} />
+        <GridBackground />
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           
           <Animated.View entering={FadeInDown.duration(600)} style={styles.searchHeader}>
-            <Text style={styles.headerTitle}>Discover</Text>
-            <Text style={styles.headerSubtitle}>Find new podcasts to build your second brain.</Text>
+            <Text style={[styles.headerTitle, { color: "#d1d1d1" }]}>Search Everything You've Heard</Text>
+            <Text style={styles.headerSubtitle}>Ask your podcast memory anything.</Text>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(100).duration(600)} style={styles.searchBarContainer}>
@@ -200,93 +136,149 @@ export default function SearchScreen() {
               ) : results.length > 0 ? (
                 results.map((pod) => (
                   <View key={pod.collectionId} style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.03)", padding: 12, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.05)" }}>
-                    <Image source={{ uri: pod.artworkUrl100 }} style={{ width: 60, height: 60, borderRadius: 12 }} />
-                    <View style={{ flex: 1, marginLeft: 16, marginRight: 16 }}>
-                      <Text style={{ color: "#fff", fontSize: 16, fontFamily: "Raleway_700Bold", marginBottom: 4 }} numberOfLines={1}>{pod.collectionName}</Text>
-                      <Text style={{ color: "#8a8a8a", fontSize: 14, fontFamily: "Raleway_400Regular" }} numberOfLines={1}>{pod.artistName}</Text>
-                    </View>
-                    <TouchableOpacity 
-                      style={{ backgroundColor: "rgba(139, 92, 246, 0.3)", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: "#8b5cf6" }}
-                      onPress={() => handleSubscribe(pod)}
-                      disabled={savingId === pod.collectionId}
-                    >
-                      {savingId === pod.collectionId ? (
-                        <ActivityIndicator size="small" color="#fff" />
-                      ) : (
-                        <Text style={{ color: "#fff", fontFamily: "Raleway_700Bold", fontSize: 14 }}>Add</Text>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                ))
+                <View style={{ paddingHorizontal: 24, gap: 16 }}>
+                  {results.map((item, idx) => (
+                    <Animated.View key={item.collectionId + idx} entering={FadeInDown.delay(idx * 100).duration(500)}>
+                      <View style={styles.resultCard}>
+                        <Image source={{ uri: item.artworkUrl100 }} style={styles.resultImage} />
+                        <View style={styles.resultInfo}>
+                          <Text style={styles.resultTitle} numberOfLines={2}>{item.collectionName}</Text>
+                          <Text style={styles.resultArtist} numberOfLines={1}>{item.artistName}</Text>
+                        </View>
+                        <TouchableOpacity 
+                          style={styles.saveButton} 
+                          onPress={() => handleSubscribe(item)}
+                          disabled={savingId === item.collectionId}
+                        >
+                          {savingId === item.collectionId ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                          ) : (
+                            <Text style={styles.saveButtonText}>Add</Text>
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    </Animated.View>
+                  ))}
+                </View>
               ) : (
-                <Text style={{ color: "#fff", textAlign: "center", marginTop: 40 }}>No results found.</Text>
+                <Text style={styles.noResultsText}>No podcasts found.</Text>
               )}
             </Animated.View>
           ) : (
-            /* Otherwise, show the classic Search UI design */
+            // Default Empty State matching new design
             <>
-              {/* Search Metrics */}
+              {/* Filter Pills */}
+              <Animated.View entering={FadeInDown.delay(150).duration(600)} style={styles.filtersContainer}>
+                <View style={[styles.filterRow, { flexWrap: "wrap", justifyContent: "center" }]}>
+                  {["📚 BOOKS", "🧬 FRAMEWORKS", "💊 SUPPLEMENTS", "👥 GUESTS", "📊 STATISTICS"].map((tag, idx) => (
+                    <View key={idx} style={styles.filterPill}>
+                      <Text style={styles.filterText}>{tag}</Text>
+                    </View>
+                  ))}
+                </View>
+              </Animated.View>
+
+              {/* Vertical Metrics Stack */}
               <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.metricsContainer}>
-                {[
-                  { icon: "🎙", title: "Episodes Indexed", count: "12,492", sub: "Global Knowledge" },
-                  { icon: "🧠", title: "Concepts Extracted", count: "89,104", sub: "Second Brain" },
-                  { icon: "⏱", title: "Hours Processed", count: "4,192", sub: "Total Audio" },
-                ].map((item, i) => (
-                  <View key={i} style={styles.metricCard}>
-                    <View style={styles.metricIconContainer}>
-                      <Text style={styles.metricIcon}>{item.icon}</Text>
-                    </View>
-                    <View style={styles.metricInfo}>
-                      <Text style={styles.metricTitle}>{item.title}</Text>
-                      <Text style={styles.metricSub}>{item.sub}</Text>
-                    </View>
-                    <View style={styles.metricCountBox}>
-                      <Text style={styles.metricCount}>{item.count}</Text>
-                      <Text style={styles.metricArrow}>❯</Text>
-                    </View>
+                <View style={styles.metricCard}>
+                  <View style={[styles.metricIconBox, { backgroundColor: "rgba(255,255,255,0.05)" }]}>
+                    <Text style={styles.metricIcon}>📚</Text>
                   </View>
-                ))}
+                  <View style={styles.metricInfo}>
+                    <Text style={styles.metricTitle}>Books Mentioned</Text>
+                    <Text style={styles.metricSub}>Syncing with GoodReads...</Text>
+                  </View>
+                  <View style={styles.metricCountBox}>
+                    <Text style={[styles.metricCount, { color: "#d1d1d1" }]}>124</Text>
+                    <Text style={styles.metricArrow}>›</Text>
+                  </View>
+                </View>
+
+                <View style={styles.metricCard}>
+                  <View style={[styles.metricIconBox, { backgroundColor: "rgba(139, 92, 246, 0.15)" }]}>
+                    <Text style={styles.metricIcon}>🧬</Text>
+                  </View>
+                  <View style={styles.metricInfo}>
+                    <Text style={styles.metricTitle}>Frameworks Saved</Text>
+                    <Text style={styles.metricSub}>Models for better thinking</Text>
+                  </View>
+                  <View style={styles.metricCountBox}>
+                    <Text style={[styles.metricCount, { color: "#d1d1d1" }]}>42</Text>
+                    <Text style={styles.metricArrow}>›</Text>
+                  </View>
+                </View>
+
+                <View style={styles.metricCard}>
+                  <View style={[styles.metricIconBox, { backgroundColor: "rgba(255,255,255,0.05)" }]}>
+                    <Text style={styles.metricIcon}>👥</Text>
+                  </View>
+                  <View style={styles.metricInfo}>
+                    <Text style={styles.metricTitle}>Guests Discovered</Text>
+                    <Text style={styles.metricSub}>Profiles across episodes</Text>
+                  </View>
+                  <View style={styles.metricCountBox}>
+                    <Text style={[styles.metricCount, { color: "#d1d1d1" }]}>312</Text>
+                    <Text style={styles.metricArrow}>›</Text>
+                  </View>
+                </View>
+
+                <View style={styles.metricCard}>
+                  <View style={[styles.metricIconBox, { backgroundColor: "rgba(244, 114, 182, 0.15)" }]}>
+                    <Text style={styles.metricIcon}>📊</Text>
+                  </View>
+                  <View style={styles.metricInfo}>
+                    <Text style={styles.metricTitle}>Statistics Captured</Text>
+                    <Text style={styles.metricSub}>Data points & research</Text>
+                  </View>
+                  <View style={styles.metricCountBox}>
+                    <Text style={[styles.metricCount, { color: "#f472b6" }]}>89</Text>
+                    <Text style={styles.metricArrow}>›</Text>
+                  </View>
+                </View>
               </Animated.View>
 
               {/* Trending In Your Library */}
-              <Animated.View entering={FadeInDown.delay(400).duration(600)} style={[styles.section, { paddingHorizontal: 0 }]}>
+              <Animated.View entering={FadeInDown.delay(300).duration(600)} style={styles.section}>
                 <View style={styles.sectionHeaderRow}>
                   <Text style={styles.sectionTitle}>Trending in Your Library</Text>
-                  <Text style={styles.viewAllText}>VIEW INSIGHTS</Text>
+                  <TouchableOpacity>
+                    <Text style={styles.viewAllText}>VIEW INSIGHTS</Text>
+                  </TouchableOpacity>
                 </View>
-                
+
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
-                  {[
-                    { title: "AGI Evolution", sub: "Discussed in 12 episodes this week.", color1: "#4c1d95", color2: "#000" },
-                    { title: "Cold Exposure", sub: "Debated in 4 episodes.", color1: "#0f172a", color2: "#000" },
-                  ].map((card, i) => (
-                    <View key={i} style={styles.trendingCard}>
-                      <LinearGradient colors={[card.color1, card.color2]} style={styles.trendingImagePlaceholder} />
-                      <View style={styles.trendingBadge}><Text style={styles.trendingBadgeText}>TOPIC</Text></View>
-                      <View style={styles.trendingDetails}>
-                        <Text style={styles.trendingTitle}>{card.title}</Text>
-                        <Text style={styles.trendingSub}>{card.sub}</Text>
-                      </View>
+                  <View style={styles.trendingCard}>
+                    <LinearGradient colors={["#5c1f8a", "#050014"]} style={styles.trendingImagePlaceholder} />
+                    <View style={styles.trendingBadge}><Text style={styles.trendingBadgeText}>TOPIC</Text></View>
+                    <View style={styles.trendingDetails}>
+                      <Text style={styles.trendingTitle}>AGI Evolution</Text>
+                      <Text style={styles.trendingSub}>Discussed in 12 episodes this week.</Text>
                     </View>
-                  ))}
+                  </View>
+                  
+                  <View style={styles.trendingCard}>
+                    <LinearGradient colors={["#1f3a8a", "#050014"]} style={styles.trendingImagePlaceholder} />
+                    <View style={[styles.trendingBadge, { backgroundColor: "rgba(59, 130, 246, 0.8)" }]}><Text style={styles.trendingBadgeText}>CONCEPT</Text></View>
+                    <View style={styles.trendingDetails}>
+                      <Text style={styles.trendingTitle}>Dopamine Detox</Text>
+                      <Text style={styles.trendingSub}>Huberman Lab peak mentions.</Text>
+                    </View>
+                  </View>
                 </ScrollView>
               </Animated.View>
 
-              {/* Ask Podex AI */}
-              <Animated.View entering={FadeInDown.delay(500).duration(600)} style={styles.section}>
+              {/* Ask Podex AI Area */}
+              <Animated.View entering={FadeInDown.delay(400).duration(600)} style={styles.section}>
                 <View style={styles.aiCard}>
-                  {/* Ambient Animated Particles */}
-                  <ParticleBackground />
-                  
                   <View style={styles.aiContent}>
                     <View style={styles.aiHeader}>
-                      <Text style={styles.aiIcon}>💜</Text>
+                      <Text style={styles.aiIcon}>✨</Text>
                       <Text style={styles.aiTitle}>Ask Podex AI</Text>
                     </View>
                     <Text style={styles.aiDescription}>
-                      I've indexed 432 hours of your listening history. You can ask me to summarize complex topics or recall specific moments.
+                      I've indexed 400 hours of your listening history. You can ask me to summarize complex topics or recall specific moments.
                     </Text>
-                    
+
                     <View style={styles.promptBubble}>
                       <Text style={styles.promptText}>"Summarize Peter Attia's views on Zone 2 training from last week"</Text>
                     </View>
@@ -295,6 +287,15 @@ export default function SearchScreen() {
                     </View>
                   </View>
                 </View>
+              </Animated.View>
+              
+              {/* Bottom Nav Extension Filter */}
+              <Animated.View entering={FadeInDown.delay(500).duration(600)} style={{ flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 24, marginBottom: 12 }}>
+                 {["EPISODES", "QUOTES", "BOOKS", "IDEAS"].map((t, i) => (
+                    <TouchableOpacity key={i} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: i === 0 ? "rgba(255,255,255,0.1)" : "transparent" }}>
+                        <Text style={{ color: i === 0 ? "#fff" : "#666", fontSize: 11, fontFamily: "Raleway_700Bold", letterSpacing: 1 }}>{t}</Text>
+                    </TouchableOpacity>
+                 ))}
               </Animated.View>
             </>
           )}
