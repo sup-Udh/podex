@@ -11,6 +11,7 @@ import {
   View,
   Modal,
   TouchableWithoutFeedback,
+  PanResponder,
 } from "react-native";
 import Animated, {
   FadeInDown,
@@ -38,10 +39,56 @@ export default function PlayerScreen() {
   const router = useRouter();
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   
-  const { currentEpisode, isPlaying, positionMillis, durationMillis, togglePlayPause, seekForward, seekBackward } = usePlayer();
+  const { currentEpisode, isPlaying, positionMillis, durationMillis, togglePlayPause, seekForward, seekBackward, seekTo } = usePlayer();
 
-  const progressPercent = durationMillis > 0 ? (positionMillis / durationMillis) * 100 : 0;
-  const remainingMillis = Math.max(durationMillis - positionMillis, 0);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [scrubMillis, setScrubMillis] = useState(0);
+
+  const stateRef = React.useRef({ sliderWidth: 0, durationMillis: 0 });
+  stateRef.current.durationMillis = durationMillis;
+  
+  const initialMillisRef = React.useRef(0);
+  const seekToRef = React.useRef(seekTo);
+  seekToRef.current = seekTo;
+
+  const panResponder = React.useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt) => {
+        setIsScrubbing(true);
+        const { sliderWidth, durationMillis } = stateRef.current;
+        if (sliderWidth > 0 && durationMillis > 0) {
+          const tapX = evt.nativeEvent.locationX;
+          const initialPercentage = Math.max(0, Math.min(1, tapX / sliderWidth));
+          const newMillis = initialPercentage * durationMillis;
+          setScrubMillis(newMillis);
+          initialMillisRef.current = newMillis;
+        }
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        const { sliderWidth, durationMillis } = stateRef.current;
+        if (sliderWidth > 0 && durationMillis > 0) {
+          const millisChange = (gestureState.dx / sliderWidth) * durationMillis;
+          setScrubMillis(Math.max(0, Math.min(durationMillis, initialMillisRef.current + millisChange)));
+        }
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        setIsScrubbing(false);
+        const { sliderWidth, durationMillis } = stateRef.current;
+        if (sliderWidth > 0 && durationMillis > 0) {
+          const millisChange = (gestureState.dx / sliderWidth) * durationMillis;
+          const finalMillis = Math.max(0, Math.min(durationMillis, initialMillisRef.current + millisChange));
+          seekToRef.current(finalMillis);
+        }
+      },
+      onPanResponderTerminate: () => setIsScrubbing(false),
+    })
+  ).current;
+
+  const displayMillis = isScrubbing ? scrubMillis : positionMillis;
+  const progressPercent = durationMillis > 0 ? (displayMillis / durationMillis) * 100 : 0;
+  const remainingMillis = Math.max(durationMillis - displayMillis, 0);
 
   // Pulse animation for the "AI is Listening" indicator
   const pulseAnim = useSharedValue(0.4);
@@ -110,12 +157,18 @@ export default function PlayerScreen() {
 
           {/* Audio Controls */}
           <View style={styles.progressContainer}>
-            <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
-              <View style={[styles.progressThumb, { left: `${progressPercent}%`, marginLeft: -6 }]} />
+            <View 
+              style={{ width: "100%", height: 30, justifyContent: "center" }}
+              onLayout={(e) => { stateRef.current.sliderWidth = e.nativeEvent.layout.width; }}
+              {...panResponder.panHandlers}
+            >
+              <View style={styles.progressBarBg} pointerEvents="none">
+                <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
+                <View style={[styles.progressThumb, { left: `${progressPercent}%`, position: "absolute", marginLeft: -6 }]} />
+              </View>
             </View>
             <View style={styles.timeRow}>
-              <Text style={styles.timeText}>{formatTime(positionMillis)}</Text>
+              <Text style={styles.timeText}>{formatTime(displayMillis)}</Text>
               <Text style={styles.timeText}>-{formatTime(remainingMillis)}</Text>
             </View>
           </View>
