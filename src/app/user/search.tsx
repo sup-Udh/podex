@@ -1,5 +1,6 @@
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -93,6 +94,10 @@ export default function SearchScreen() {
       console.error("Insert Error:", error);
       Alert.alert("Error", "Could not save podcast: " + JSON.stringify(error));
     } else {
+      // Clear Dashboard Cache so it re-fetches with new podcasts!
+      await AsyncStorage.removeItem("dashboard_podcasts");
+      await AsyncStorage.removeItem("dashboard_episodes");
+
       Alert.alert("Added to Library!", `${podcast.collectionName} is now in your library.`, [
         { text: "OK", onPress: () => router.push("/user/library" as any) }
       ]);
@@ -156,7 +161,7 @@ export default function SearchScreen() {
                           {savingId === item.collectionId ? (
                             <ActivityIndicator size="small" color="#fff" />
                           ) : (
-                            <Text style={styles.saveButtonText}>Add</Text>
+                            <Text style={styles.saveButtonText}>+</Text>
                           )}
                         </TouchableOpacity>
                       </View>

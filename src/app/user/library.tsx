@@ -1,7 +1,7 @@
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -15,7 +15,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 
 import BottomNavbar from "../../components/BottomNavbar";
 import SwipeNavigator from "../../components/SwipeNavigator";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../services/supabase";
 
@@ -29,11 +29,13 @@ export default function LibraryScreen() {
   const [podcasts, setPodcasts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (session?.user) {
-      loadPodcasts();
-    }
-  }, [session]);
+  useFocusEffect(
+    useCallback(() => {
+      if (session?.user) {
+        loadPodcasts();
+      }
+    }, [session])
+  );
 
   const loadPodcasts = async () => {
     try {
