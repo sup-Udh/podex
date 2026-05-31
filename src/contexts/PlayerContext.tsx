@@ -1,7 +1,7 @@
 // audio playback in context om n the entire app
 
-import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from "expo-av";
-import React, { createContext, useContext, useEffect, useState, useRef } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import TrackPlayer, { State, useProgress, usePlaybackState, Capability, AppKilledPlaybackBehavior } from 'react-native-track-player';
 import { Episode } from "../services/episodes";
 
 interface PlayerContextType {
@@ -19,93 +19,89 @@ interface PlayerContextType {
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [currentEpisode, setCurrentEpisode] = useState<Episode | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [positionMillis, setPositionMillis] = useState(0);
-  const [durationMillis, setDurationMillis] = useState(0);
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
+  
+  const playbackState = usePlaybackState();
+  const { position, duration } = useProgress();
+
+  const isPlaying = playbackState.state === State.Playing || playbackState.state === State.Buffering;
+  const positionMillis = position * 1000;
+  const durationMillis = duration * 1000;
 
   useEffect(() => {
-    // Configure audio for background playback
-    Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      staysActiveInBackground: true,
-      interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-      playsInSilentModeIOS: true,
-      shouldDuckAndroid: true,
-      interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
-      playThroughEarpieceAndroid: false,
-    });
-
-    return () => {
-      if (sound) {
-        sound.unloadAsync();
+    async function setup() {
+      try {
+        await TrackPlayer.setupPlayer();
+        await TrackPlayer.updateOptions({
+          android: {
+            appKilledPlaybackBehavior: AppKilledPlaybackBehavior.StopPlaybackAndRemoveNotification,
+          },
+          capabilities: [
+            Capability.Play,
+            Capability.Pause,
+            Capability.JumpForward,
+            Capability.JumpBackward,
+            Capability.SeekTo,
+          ],
+          compactCapabilities: [
+            Capability.Play,
+            Capability.Pause,
+          ],
+          forwardJumpInterval: 15,
+          backwardJumpInterval: 15,
+        });
+        setIsPlayerReady(true);
+      } catch (e) {
+        console.log("Player already initialized");
+        setIsPlayerReady(true);
       }
-    };
-  }, [sound]);
+    }
+    setup();
+  }, []);
 
   const playEpisode = async (episode: Episode) => {
+    if (!isPlayerReady) return;
     try {
-      if (sound) {
-        await sound.unloadAsync();
-        setSound(null);
-      }
-
       setCurrentEpisode(episode);
-      setIsPlaying(true);
-      setPositionMillis(0);
-      setDurationMillis(0);
-
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: episode.audioUrl },
-        { shouldPlay: true },
-        (status) => {
-          if (status.isLoaded) {
-            setIsPlaying(status.isPlaying);
-            setPositionMillis(status.positionMillis);
-            if (status.durationMillis) {
-              setDurationMillis(status.durationMillis);
-            }
-          } else if (status.error) {
-            console.log("Playback Error: ", status.error);
-          }
-        }
-      );
-
-      setSound(newSound);
+      await TrackPlayer.reset();
+      await TrackPlayer.add({
+        id: episode.title || 'episode',
+        url: episode.audioUrl,
+        title: episode.title,
+        artist: episode.podcastName || 'Podex',
+        artwork: episode.imageUrl || 'https://via.placeholder.com/150',
+      });
+      await TrackPlayer.play();
     } catch (error) {
       console.log("Error playing audio", error);
-      setIsPlaying(false);
     }
   };
 
   const togglePlayPause = async () => {
-    if (!sound) return;
-    
+    if (!isPlayerReady) return;
     if (isPlaying) {
-      await sound.pauseAsync();
-      setIsPlaying(false);
+      await TrackPlayer.pause();
     } else {
-      await sound.playAsync();
-      setIsPlaying(true);
+      await TrackPlayer.play();
     }
   };
 
   const seekForward = async () => {
-    if (!sound) return;
-    const newPosition = positionMillis + 15000;
-    await sound.setPositionAsync(Math.min(newPosition, durationMillis));
+    if (!isPlayerReady) return;
+    const currentPos = await TrackPlayer.getPosition();
+    await TrackPlayer.seekTo(currentPos + 15);
   };
 
   const seekBackward = async () => {
-    if (!sound) return;
-    const newPosition = positionMillis - 15000;
-    await sound.setPositionAsync(Math.max(newPosition, 0));
+    if (!isPlayerReady) return;
+    const currentPos = await TrackPlayer.getPosition();
+    await TrackPlayer.seekTo(Math.max(currentPos - 15, 0));
   };
 
   const seekTo = async (millis: number) => {
-    if (!sound) return;
-    await sound.setPositionAsync(millis);
+    if (!isPlayerReady) return;
+    await TrackPlayer.seekTo(millis / 1000);
   };
 
   return (

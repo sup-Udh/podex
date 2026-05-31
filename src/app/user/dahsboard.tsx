@@ -32,6 +32,7 @@ export default function Dashboard() {
   const [podcasts, setPodcasts] = useState<any[]>([]);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(10);
 
   useEffect(() => {
     if (session?.user) {
@@ -61,7 +62,7 @@ export default function Dashboard() {
       await Promise.all(
         data.map(async (pod) => {
           if (pod.feed_url) {
-            const eps = await fetchEpisodesFromFeed(pod.feed_url, 3); // Get latest 3 from each
+            const eps = await fetchEpisodesFromFeed(pod.feed_url, 20); // Fetch 20 from each to build a robust timeline
             // Inject podcast name and image into episode for UI if missing
             const enhancedEps = eps.map(e => ({
               ...e,
@@ -88,10 +89,13 @@ export default function Dashboard() {
     <SwipeNavigator>
       <View style={styles.container}>
       <LinearGradient
-        colors={["#000000", "#050014", "#000000"]}
+        colors={["#0f0524", "#13072e", "#050014"]}
         style={StyleSheet.absoluteFill}
       />
-      <View style={styles.glowBackground} />
+      {/* Vibrant Ambient Orbs */}
+      <View style={[styles.glowBackground, { backgroundColor: "rgba(139, 92, 246, 0.25)", top: -100, right: -150 }]} />
+      <View style={[styles.glowBackground, { backgroundColor: "rgba(236, 72, 153, 0.15)", top: 200, left: -200, width: 400, height: 400 }]} />
+      <View style={[styles.glowBackground, { backgroundColor: "rgba(59, 130, 246, 0.15)", bottom: -100, right: -50, width: 300, height: 300 }]} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -149,9 +153,9 @@ export default function Dashboard() {
                 <Text style={styles.sectionTitle}>Latest Episodes</Text>
               </View>
 
-              {episodes.map((ep, idx) => (
-                <View key={ep.id + idx} style={[styles.feedCard, { marginBottom: 16 }]}>
-                  <LinearGradient colors={["rgba(255,255,255,0.03)", "rgba(255,255,255,0.0)"]} style={StyleSheet.absoluteFill} />
+              {episodes.slice(0, visibleCount).map((ep, idx) => (
+                <View key={ep.id + idx} style={[styles.feedCard, { marginBottom: 16, backgroundColor: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.1)" }]}>
+                  <LinearGradient colors={["rgba(255,255,255,0.05)", "rgba(255,255,255,0.0)"]} style={StyleSheet.absoluteFill} />
                   <View style={styles.feedCardHeader}>
                     <Image source={{ uri: ep.imageUrl }} style={styles.feedCardImage} contentFit="cover" />
                     <View style={styles.feedCardTitleContainer}>
@@ -160,7 +164,7 @@ export default function Dashboard() {
                     </View>
                   </View>
                   
-                  <Text style={[styles.feedCardSnippet, { marginTop: 12 }]} numberOfLines={3}>
+                  <Text style={[styles.feedCardSnippet, { marginTop: 12, color: "#a1a1aa" }]} numberOfLines={3}>
                     {ep.description.replace(/<[^>]*>?/gm, '').trim()}
                   </Text>
                   
@@ -172,12 +176,21 @@ export default function Dashboard() {
                       playEpisode(ep);
                       router.push("/user/player" as any);
                     }}>
-                      <LinearGradient colors={["#4b4073", "#2c244b"]} style={StyleSheet.absoluteFill} />
+                      <LinearGradient colors={["#ec4899", "#8b5cf6"]} style={StyleSheet.absoluteFill} />
                       <Text style={styles.playButtonMiniIcon}>▶</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
               ))}
+
+              {visibleCount < episodes.length && (
+                <TouchableOpacity 
+                  style={{ alignSelf: "center", marginTop: 24, paddingVertical: 12, paddingHorizontal: 32, borderRadius: 24, backgroundColor: "rgba(139, 92, 246, 0.2)", borderWidth: 1, borderColor: "#8b5cf6" }}
+                  onPress={() => setVisibleCount(prev => prev + 10)}
+                >
+                  <Text style={{ color: "#fff", fontFamily: "Raleway_700Bold" }}>Load More Episodes</Text>
+                </TouchableOpacity>
+              )}
             </Animated.View>
           </>
         )}

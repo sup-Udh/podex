@@ -9,14 +9,19 @@ import {
 import { Stack } from "expo-router";
 import { LogBox } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { AuthProvider } from "../contexts/AuthContext";
+import { PlayerProvider } from "../contexts/PlayerContext";
+import MiniPlayer from "../components/MiniPlayer";
+import TrackPlayer from 'react-native-track-player';
+import { PlaybackService } from '../services/playbackService';
+
+TrackPlayer.registerPlaybackService(() => PlaybackService);
 
 LogBox.ignoreLogs([
   '"shadow*" style props are deprecated. Use "boxShadow".',
   '"textShadow*" style props are deprecated. Use "textShadow".',
   "AuthApiError: Invalid Refresh Token: Refresh Token Not Found",
 ]);
-import { AuthProvider } from "../contexts/AuthContext";
-import { PlayerProvider } from "../contexts/PlayerContext";
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -39,6 +44,7 @@ export default function RootLayout() {
               },
             }}
           />
+          <MiniPlayer />
         </GestureHandlerRootView>
       </PlayerProvider>
     </AuthProvider>
