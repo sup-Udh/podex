@@ -27,6 +27,7 @@ import Animated, {
 
 import BottomNavbar from "../../components/BottomNavbar";
 import SwipeNavigator from "../../components/SwipeNavigator";
+import PremiumBackground from "../../components/PremiumBackground";
 import { searchPodcasts } from "../../services/podcast";
 import { supabase } from "../../services/supabase";
 import { useAuth } from "../../hooks/useAuth";
@@ -121,7 +122,7 @@ export default function SearchScreen() {
   return (
     <SwipeNavigator>
       <View style={styles.container}>
-        <GridBackground />
+        <PremiumBackground />
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           

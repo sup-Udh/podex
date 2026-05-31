@@ -15,6 +15,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 
 import BottomNavbar from "../../components/BottomNavbar";
 import SwipeNavigator from "../../components/SwipeNavigator";
+import PremiumBackground from "../../components/PremiumBackground";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../services/supabase";
@@ -63,10 +64,7 @@ export default function LibraryScreen() {
   return (
     <SwipeNavigator>
       <View style={styles.container}>
-        <LinearGradient
-          colors={["#000000", "#050014", "#000000"]}
-          style={StyleSheet.absoluteFill}
-        />
+        <PremiumBackground />
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           

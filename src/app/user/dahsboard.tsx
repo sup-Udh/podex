@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useFocusEffect } from "expo-router";
 import BottomNavbar from "../../components/BottomNavbar";
 import SwipeNavigator from "../../components/SwipeNavigator";
+import PremiumBackground from "../../components/PremiumBackground";
 import { usePlayer } from "../../contexts/PlayerContext";
 import { useAuth } from "../../hooks/useAuth";
 import { Episode, fetchEpisodesFromFeed } from "../../services/episodes";
@@ -117,11 +118,7 @@ export default function Dashboard() {
   return (
     <SwipeNavigator>
       <View style={styles.container}>
-        <LinearGradient colors={["#0f0524", "#13072e", "#050014"]} style={StyleSheet.absoluteFill} />
-        {/* Vibrant Ambient Orbs */}
-        <View style={[styles.glowBackground, { backgroundColor: "rgba(139, 92, 246, 0.25)", top: -100, right: -150 }]} />
-        <View style={[styles.glowBackground, { backgroundColor: "rgba(236, 72, 153, 0.15)", top: 200, left: -200, width: 400, height: 400 }]} />
-        <View style={[styles.glowBackground, { backgroundColor: "rgba(59, 130, 246, 0.15)", bottom: -100, right: -50, width: 300, height: 300 }]} />
+        <PremiumBackground />
 
         {loading ? (
           <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>

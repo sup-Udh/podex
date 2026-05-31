@@ -14,6 +14,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 
 import BottomNavbar from "../../../components/BottomNavbar";
 import SwipeNavigator from "../../../components/SwipeNavigator";
+import PremiumBackground from "../../../components/PremiumBackground";
 import { usePlayer } from "../../../contexts/PlayerContext";
 import { Episode, fetchEpisodesFromFeed } from "../../../services/episodes";
 import { supabase } from "../../../services/supabase";
@@ -75,10 +76,7 @@ export default function PodcastDetails() {
   return (
     <SwipeNavigator>
       <View style={styles.container}>
-        <LinearGradient
-          colors={["#000000", "#050014", "#000000"]}
-          style={StyleSheet.absoluteFill}
-        />
+        <PremiumBackground />
 
         <View style={styles.topBar}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
