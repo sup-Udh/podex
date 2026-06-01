@@ -90,7 +90,25 @@ export default function PodcastDetails() {
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 150 }}>
           {loading ? (
-            <ActivityIndicator size="large" color="#8b5cf6" style={{ marginTop: 100 }} />
+            <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
+              {/* Skeleton artwork */}
+              <View style={{ alignItems: "center", marginBottom: 20 }}>
+                <View style={{ width: 200, height: 200, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.06)" }} />
+              </View>
+              {/* Skeleton title */}
+              <View style={{ width: "70%", height: 22, borderRadius: 8, backgroundColor: "rgba(255,255,255,0.06)", alignSelf: "center", marginBottom: 10 }} />
+              <View style={{ width: "40%", height: 14, borderRadius: 6, backgroundColor: "rgba(255,255,255,0.04)", alignSelf: "center", marginBottom: 30 }} />
+              {/* Skeleton episode cards */}
+              {[1, 2, 3, 4, 5].map((i) => (
+                <View key={i} style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 14, padding: 14, marginBottom: 12 }}>
+                  <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: "rgba(255,255,255,0.06)", marginRight: 14 }} />
+                  <View style={{ flex: 1 }}>
+                    <View style={{ width: "80%", height: 14, borderRadius: 6, backgroundColor: "rgba(255,255,255,0.06)", marginBottom: 8 }} />
+                    <View style={{ width: "50%", height: 10, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.04)" }} />
+                  </View>
+                </View>
+              ))}
+            </View>
           ) : !podcast ? (
             <Text style={{ color: "#fff", textAlign: "center", marginTop: 100 }}>Podcast not found.</Text>
           ) : (
@@ -124,7 +142,7 @@ export default function PodcastDetails() {
                         router.push("/user/player" as any);
                       }}
                     >
-                      <LinearGradient colors={["#8b5cf6", "#6d28d9"]} style={StyleSheet.absoluteFill} />
+                      <LinearGradient colors={["#8b5cf6", "#6d28d9"]} style={StyleSheet.absoluteFill} pointerEvents="none" />
                       <Text style={styles.playIcon}>▶</Text>
                     </TouchableOpacity>
                   </View>

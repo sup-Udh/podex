@@ -15,6 +15,7 @@ interface PlayerContextType {
   durationMillis: number;
   playEpisode: (episode: Episode) => Promise<void>;
   togglePlayPause: () => Promise<void>;
+  pausePlayback: () => Promise<void>;
   seekForward: () => Promise<void>;
   seekBackward: () => Promise<void>;
   seekTo: (millis: number) => Promise<void>;
@@ -224,16 +225,30 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const togglePlayPause = async () => {
     if (!sound) return;
     
-    if (isPlaying) {
+    try {
+      if (isPlaying) {
+        await sound.pauseAsync();
+        setIsPlaying(false);
+        // Final sync on pause
+        if (session?.user && currentEpisode) {
+          syncProgressToDB(session.user.id, currentEpisode, positionMillis, durationMillis);
+        }
+      } else {
+        await sound.playAsync();
+        setIsPlaying(true);
+      }
+    } catch (e) {
+      console.error("togglePlayPause error:", e);
+    }
+  };
+
+  const pausePlayback = async () => {
+    if (!sound || !isPlaying) return;
+    try {
       await sound.pauseAsync();
       setIsPlaying(false);
-      // Final sync on pause
-      if (session?.user && currentEpisode) {
-        syncProgressToDB(session.user.id, currentEpisode, positionMillis, durationMillis);
-      }
-    } else {
-      await sound.playAsync();
-      setIsPlaying(true);
+    } catch (e) {
+      console.error("pausePlayback error:", e);
     }
   };
 
@@ -280,6 +295,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         durationMillis,
         playEpisode,
         togglePlayPause,
+        pausePlayback,
         seekForward,
         seekBackward,
         seekTo,

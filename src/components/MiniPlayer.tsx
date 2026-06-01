@@ -17,8 +17,8 @@ export default function MiniPlayer() {
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
-  // Do not show mini player if nothing is playing, or if we are already on the full player screen
-  if (!currentEpisode || pathname === "/user/player") {
+  // Do not show mini player if nothing is playing, or if we are on full player / AI chat
+  if (!currentEpisode || pathname === "/user/player" || pathname === "/user/chat") {
     return null;
   }
 

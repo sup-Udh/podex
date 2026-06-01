@@ -179,7 +179,7 @@ export default function PlayerScreen() {
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.playButton} activeOpacity={0.8} onPress={togglePlayPause}>
-              <LinearGradient colors={["#8b5cf6", "#6d28d9"]} style={StyleSheet.absoluteFill} />
+              <LinearGradient colors={["#8b5cf6", "#6d28d9"]} style={StyleSheet.absoluteFill} pointerEvents="none" />
               <Text style={styles.playIcon}>{isPlaying ? "||" : "▶"}</Text>
             </TouchableOpacity>
             
@@ -200,7 +200,7 @@ export default function PlayerScreen() {
             </View>
             {transcriptStatus === "completed" && (
               <TouchableOpacity onPress={() => router.push("/user/chat")} style={{ backgroundColor: "rgba(139, 92, 246, 0.2)", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 }}>
-                <Text style={{ color: "#a855f7", fontWeight: "bold", fontSize: 12 }}>Talk to AI 🤖</Text>
+                <Text style={{ color: "#a855f7", fontWeight: "bold", fontSize: 12 }}>Talk to AI</Text>
               </TouchableOpacity>
             )}
           </View>

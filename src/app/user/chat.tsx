@@ -1,209 +1,484 @@
-import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Dimensions } from "react-native";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { Audio } from "expo-av";
-import Animated, { FadeInUp, FadeInDown, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming } from "react-native-reanimated";
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withRepeat, 
+  withSequence, 
+  withTiming, 
+  interpolateColor,
+  Easing,
+  cancelAnimation
+} from "react-native-reanimated";
+import { Mic, Square, X } from "lucide-react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { usePlayer } from "../../contexts/PlayerContext";
 import { askPodcast, transcribeVoice, generateSpeech } from "../../services/ai";
 import PremiumBackground from "../../components/PremiumBackground";
 
-const { height } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
+
+type VoiceMode = "idle" | "listening" | "processing" | "speaking";
 
 export default function ChatScreen() {
   const router = useRouter();
   const { session } = useAuth();
-  const { currentEpisode } = usePlayer();
+  const { currentEpisode, pausePlayback, isPlaying } = usePlayer();
 
-  const [messages, setMessages] = useState<{ role: "user" | "ai", text: string }[]>([]);
-  const [inputText, setInputText] = useState("");
-  const [isAiThinking, setIsAiThinking] = useState(false);
+  const [mode, setMode] = useState<VoiceMode>("idle");
+  const [statusLine, setStatusLine] = useState("");
+  const recordingRef = useRef<Audio.Recording | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
 
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const scrollViewRef = useRef<ScrollView>(null);
-
-  // Animation for pulse ring when AI is speaking or listening
-  const pulseScale = useSharedValue(1);
-
+  // Auto-pause podcast when entering AI mode
   useEffect(() => {
-    if (isAiThinking || isPlayingAudio || recording) {
-      pulseScale.value = withRepeat(
-        withSequence(
-          withTiming(1.2, { duration: 800 }),
-          withTiming(1, { duration: 800 })
-        ),
-        -1,
-        true
-      );
-    } else {
-      pulseScale.value = withTiming(1);
+    if (isPlaying) {
+      pausePlayback();
     }
-  }, [isAiThinking, isPlayingAudio, recording]);
+  }, []);
 
-  const animatedPulse = useAnimatedStyle(() => ({
-    transform: [{ scale: pulseScale.value }],
-  }));
+  // Animation shared values
+  const orbScale = useSharedValue(1);
+  const colorProgress = useSharedValue(0);
 
-  const sendMessage = async (text: string) => {
-    if (!text.trim() || !currentEpisode || !session?.user) return;
-    setMessages(prev => [...prev, { role: "user", text }]);
-    setInputText("");
-    setIsAiThinking(true);
+  // Drive orb animations based on mode
+  useEffect(() => {
+    cancelAnimation(orbScale);
+
+    switch (mode) {
+      case "idle":
+        colorProgress.value = withTiming(0, { duration: 400 });
+        orbScale.value = withRepeat(
+          withSequence(
+            withTiming(1.04, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
+            withTiming(1, { duration: 2500, easing: Easing.inOut(Easing.ease) })
+          ),
+          -1, true
+        );
+        break;
+      case "listening":
+        colorProgress.value = withTiming(1, { duration: 250 });
+        orbScale.value = withRepeat(
+          withSequence(
+            withTiming(1.15, { duration: 500 }),
+            withTiming(1.05, { duration: 500 }),
+            withTiming(1.2, { duration: 400 }),
+            withTiming(1.08, { duration: 400 })
+          ),
+          -1, true
+        );
+        break;
+      case "processing":
+        colorProgress.value = withTiming(2, { duration: 400 });
+        orbScale.value = withRepeat(
+          withSequence(
+            withTiming(1.1, { duration: 800 }),
+            withTiming(0.92, { duration: 800 })
+          ),
+          -1, true
+        );
+        break;
+      case "speaking":
+        colorProgress.value = withTiming(3, { duration: 400 });
+        orbScale.value = withRepeat(
+          withSequence(
+            withTiming(1.25, { duration: 350 }),
+            withTiming(1.1, { duration: 250 }),
+            withTiming(1.3, { duration: 400 }),
+            withTiming(1.05, { duration: 300 })
+          ),
+          -1, true
+        );
+        break;
+    }
+  }, [mode]);
+
+  const animatedOrbStyle = useAnimatedStyle(() => {
+    const backgroundColor = interpolateColor(
+      colorProgress.value,
+      [0, 1, 2, 3],
+      [
+        "rgba(255, 255, 255, 0.08)",
+        "rgba(239, 68, 68, 0.85)",
+        "rgba(139, 92, 246, 0.85)",
+        "rgba(16, 185, 129, 0.85)",
+      ]
+    );
+    return {
+      transform: [{ scale: orbScale.value }],
+      backgroundColor,
+    };
+  });
+
+  // ── Core flow: stop recording → transcribe → ask AI → speak ──
+  const processRecording = useCallback(async () => {
+    const rec = recordingRef.current;
+    if (!rec) {
+      setStatusLine("No active recording found.");
+      setMode("idle");
+      return;
+    }
 
     try {
-      const answer = await askPodcast(text, currentEpisode.id, session.user.id);
-      setMessages(prev => [...prev, { role: "ai", text: answer }]);
-      // ALWAYS speak the response as requested
+      setStatusLine("Processing audio...");
+      await rec.stopAndUnloadAsync();
+      const uri = rec.getURI();
+      recordingRef.current = null;
+
+      if (!uri) {
+        setStatusLine("No audio was captured. Try again.");
+        setMode("idle");
+        return;
+      }
+
+      if (!currentEpisode) {
+        setStatusLine("No episode loaded. Play a podcast first.");
+        setMode("idle");
+        return;
+      }
+
+      if (!session?.user) {
+        setStatusLine("Not logged in.");
+        setMode("idle");
+        return;
+      }
+
+      // Step 1: Transcribe
+      setMode("processing");
+      setStatusLine("Transcribing your voice...");
+      const textQuery = await transcribeVoice(uri);
+
+      if (!textQuery || textQuery.trim() === "") {
+        setStatusLine("Couldn't hear anything. Tap to try again.");
+        setMode("idle");
+        return;
+      }
+
+      setStatusLine(`"${textQuery}"`);
+
+      // Step 2: Ask AI
+      setStatusLine("Asking Podex AI...");
+      const answer = await askPodcast(textQuery, currentEpisode.id, session.user.id);
+
+      // Step 3: Speak the response
       await playAiSpeech(answer);
-    } catch (e) {
-      setMessages(prev => [...prev, { role: "ai", text: "Sorry, I couldn't process that. Try again." }]);
-    } finally {
-      setIsAiThinking(false);
+
+    } catch (e: any) {
+      console.error("Voice flow error:", e);
+      setStatusLine(`Error: ${e.message || "Unknown error"}`);
+      setMode("idle");
     }
-  };
+  }, [currentEpisode, session]);
 
   const playAiSpeech = async (text: string) => {
     try {
+      // Switch audio mode from recording → playback
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+      });
+
       const base64Audio = await generateSpeech(text);
       const { sound } = await Audio.Sound.createAsync({ uri: base64Audio });
-      setIsPlayingAudio(true);
+      soundRef.current = sound;
+
       await sound.playAsync();
-      sound.setOnPlaybackStatusUpdate((status: any) => {
-        if (status.didJustFinish) {
-          setIsPlayingAudio(false);
-          sound.unloadAsync();
-        }
+
+      let speakingStarted = false;
+      return new Promise<void>((resolve) => {
+        sound.setOnPlaybackStatusUpdate((status: any) => {
+          if (status.isLoaded && status.isPlaying && !speakingStarted) {
+            speakingStarted = true;
+            setMode("speaking");
+            setStatusLine("Speaking...");
+          }
+          if (status.didJustFinish) {
+            setStatusLine("Tap to speak again.");
+            setMode("idle");
+            sound.unloadAsync();
+            soundRef.current = null;
+            resolve();
+          }
+        });
       });
-    } catch (e) {
-      console.log("TTS Error:", e);
-      setIsPlayingAudio(false);
+    } catch (e: any) {
+      console.error("TTS Error:", e);
+      setStatusLine(`Speech error: ${e.message}`);
+      setMode("idle");
     }
   };
 
-  const toggleRecording = async () => {
+  // ── Tap handler ──
+  const handleMicPress = async () => {
+    if (mode === "listening") {
+      // STOP and process
+      processRecording();
+      return;
+    }
+
+    if (!currentEpisode) {
+      Alert.alert("No Episode", "Go back, play a podcast episode, then tap Talk to AI from the player.");
+      return;
+    }
+
+    // START recording
     try {
-      if (recording) {
-        await recording.stopAndUnloadAsync();
-        const uri = recording.getURI();
-        setRecording(null);
-        if (uri) {
-          setIsAiThinking(true);
-          const transcript = await transcribeVoice(uri);
-          sendMessage(transcript);
-        }
-      } else {
-        await Audio.requestPermissionsAsync();
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: true,
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: true,
-        });
-        const { recording: newRecording } = await Audio.Recording.createAsync(
-          Audio.RecordingOptionsPresets.HIGH_QUALITY
-        );
-        setRecording(newRecording);
+      setStatusLine("Starting mic...");
+      const { granted } = await Audio.requestPermissionsAsync();
+      if (!granted) {
+        Alert.alert("Permission Denied", "Microphone access is required.");
+        return;
       }
-    } catch (err) {
-      console.error("Failed to start recording", err);
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+      });
+
+      const { recording: newRecording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+
+      recordingRef.current = newRecording;
+      setMode("listening");
+      setStatusLine("Listening — tap when done.");
+
+    } catch (err: any) {
+      console.error("Mic start error:", err);
+      setStatusLine(`Mic error: ${err.message}`);
+      setMode("idle");
     }
   };
+
+  const isBusy = mode === "processing" || mode === "speaking";
+
+  const getStatusLabel = () => {
+    switch (mode) {
+      case "idle": return "Tap to speak";
+      case "listening": return "Listening — tap to send";
+      case "processing": return "Thinking...";
+      case "speaking": return "Speaking...";
+    }
+  };
+
+  // No episode guard — show helpful message
+  if (!currentEpisode) {
+    return (
+      <View style={styles.container}>
+        <PremiumBackground />
+        <View style={styles.header}>
+          <View style={styles.headerSpacer} />
+          <Text style={styles.headerTitle}>Podex AI</Text>
+          <TouchableOpacity 
+            onPress={() => {
+              if (router.canGoBack()) router.back();
+              else router.replace("/user/dashboard" as any);
+            }} 
+            style={styles.closeButton}
+          >
+            <X color="#fff" size={24} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.centerStage}>
+          <View style={{ width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: "#71717a", alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: "#71717a", fontSize: 28, fontWeight: "bold" }}>!</Text>
+          </View>
+          <Text style={styles.noEpisodeTitle}>No Episode Selected</Text>
+          <Text style={styles.noEpisodeDesc}>
+            Play a podcast episode first, then tap{"\n"}"Talk to AI" from the player screen.
+          </Text>
+          <TouchableOpacity 
+            style={styles.goBackBtn}
+            onPress={() => {
+              if (router.canGoBack()) router.back();
+              else router.replace("/user/dashboard" as any);
+            }}
+          >
+            <Text style={styles.goBackText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#09090b" }}>
+    <View style={styles.container}>
       <PremiumBackground />
       
       {/* Header */}
-      <View style={{ paddingTop: 50, paddingHorizontal: 20, paddingBottom: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <TouchableOpacity onPress={() => router.back()} style={{ padding: 10, backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 20 }}>
-          <Text style={{ color: "white", fontWeight: "bold" }}>← Back</Text>
+      <View style={styles.header}>
+        <View style={styles.headerSpacer} />
+        <View style={{ alignItems: "center" }}>
+          <Text style={styles.headerTitle}>Podex AI</Text>
+          <Text style={styles.headerSub} numberOfLines={1}>{currentEpisode.title}</Text>
+        </View>
+        <TouchableOpacity 
+          onPress={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace("/user/dashboard" as any);
+          }} 
+          style={styles.closeButton}
+        >
+          <X color="#fff" size={24} />
         </TouchableOpacity>
-        <Text style={{ color: "white", fontSize: 18, fontWeight: "bold", fontFamily: "Raleway_700Bold" }}>Podex AI</Text>
-        <View style={{ width: 40 }} />
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView 
-          ref={scrollViewRef}
-          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-          style={{ flex: 1, paddingHorizontal: 20 }}
-          contentContainerStyle={{ paddingTop: 20, paddingBottom: 20 }}
+      {/* Center Orb */}
+      <View style={styles.centerStage}>
+        <Animated.View style={[styles.orb, animatedOrbStyle]} />
+        {statusLine ? (
+          <Text style={styles.statusDetail}>{statusLine}</Text>
+        ) : null}
+      </View>
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        <Text style={styles.statusText}>{getStatusLabel()}</Text>
+        
+        <TouchableOpacity 
+          style={[
+            styles.micButton, 
+            isBusy && styles.micButtonDisabled,
+            mode === "listening" && styles.micButtonActive,
+          ]} 
+          onPress={handleMicPress}
+          disabled={isBusy}
+          activeOpacity={0.7}
         >
-          {messages.length === 0 && (
-            <Animated.View entering={FadeInUp} style={{ alignItems: "center", marginTop: height * 0.1 }}>
-              <Text style={{ color: "#a1a1aa", fontSize: 16, fontFamily: "Raleway_400Regular", textAlign: "center" }}>
-                Ask anything about{'\n'}
-                <Text style={{ color: "white", fontWeight: "bold", marginTop: 10 }}>{currentEpisode?.title}</Text>
-              </Text>
-            </Animated.View>
+          {mode === "listening" ? (
+            <Square color="#fff" size={28} fill="#fff" />
+          ) : (
+            <Mic color={isBusy ? "rgba(255,255,255,0.3)" : "#fff"} size={32} />
           )}
-
-          {messages.map((m, i) => (
-            <Animated.View 
-              entering={FadeInDown.delay(100)} 
-              key={i} 
-              style={{
-                alignSelf: m.role === "user" ? "flex-end" : "flex-start",
-                backgroundColor: m.role === "user" ? "#8b5cf6" : "rgba(39, 39, 42, 0.8)",
-                padding: 15,
-                borderRadius: 20,
-                borderBottomRightRadius: m.role === "user" ? 5 : 20,
-                borderBottomLeftRadius: m.role === "user" ? 20 : 5,
-                marginBottom: 15,
-                maxWidth: "85%"
-              }}
-            >
-              <Text style={{ color: "white", fontSize: 15, lineHeight: 22, fontFamily: "Raleway_400Regular" }}>{m.text}</Text>
-            </Animated.View>
-          ))}
-
-          {isAiThinking && (
-            <Animated.View entering={FadeInDown} style={{ alignSelf: "flex-start", backgroundColor: "rgba(39, 39, 42, 0.8)", padding: 15, borderRadius: 20, marginBottom: 15 }}>
-              <Text style={{ color: "#a1a1aa" }}>Thinking...</Text>
-            </Animated.View>
-          )}
-        </ScrollView>
-
-        {/* Live Voice Orb & Input */}
-        <View style={{ padding: 20, paddingBottom: 40, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.05)", backgroundColor: "rgba(9, 9, 11, 0.9)" }}>
-          <View style={{ alignItems: "center", marginBottom: 20 }}>
-            <Animated.View style={[
-              {
-                width: 80, height: 80, borderRadius: 40,
-                backgroundColor: recording ? "#ef4444" : isPlayingAudio ? "#10b981" : "#8b5cf6",
-                justifyContent: "center", alignItems: "center",
-                shadowColor: recording ? "#ef4444" : isPlayingAudio ? "#10b981" : "#8b5cf6",
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.8,
-                shadowRadius: 20,
-                elevation: 10
-              },
-              animatedPulse
-            ]}>
-              <TouchableOpacity onPress={toggleRecording} style={{ width: 80, height: 80, borderRadius: 40, justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ fontSize: 32 }}>{recording ? "⏹" : isPlayingAudio ? "🔊" : "🎤"}</Text>
-              </TouchableOpacity>
-            </Animated.View>
-            <Text style={{ color: "#a1a1aa", marginTop: 15, fontSize: 12, fontFamily: "Raleway_400Regular", letterSpacing: 1 }}>
-              {recording ? "LISTENING..." : isPlayingAudio ? "SPEAKING..." : "TAP TO TALK"}
-            </Text>
-          </View>
-
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <TextInput 
-              style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.1)", color: "white", borderRadius: 25, paddingHorizontal: 20, paddingVertical: 12, fontSize: 15, fontFamily: "Raleway_400Regular" }}
-              placeholder="Or type your question..."
-              placeholderTextColor="#71717a"
-              value={inputText}
-              onChangeText={setInputText}
-              onSubmitEditing={() => sendMessage(inputText)}
-            />
-            <TouchableOpacity onPress={() => sendMessage(inputText)} style={{ backgroundColor: "#8b5cf6", padding: 12, borderRadius: 25, marginLeft: 10 }}>
-              <Text style={{ fontSize: 16 }}>↗️</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#000",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 60,
+    paddingHorizontal: 24,
+    zIndex: 10,
+  },
+  headerSpacer: {
+    width: 44,
+  },
+  headerTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontFamily: "Raleway_700Bold",
+  },
+  headerSub: {
+    color: "#71717a",
+    fontSize: 11,
+    fontFamily: "Raleway_400Regular",
+    marginTop: 2,
+    maxWidth: 200,
+    textAlign: "center",
+  },
+  closeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  centerStage: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  orb: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    shadowColor: "#fff",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 30,
+    elevation: 10,
+  },
+  statusDetail: {
+    color: "#71717a",
+    fontSize: 13,
+    fontFamily: "Raleway_400Regular",
+    marginTop: 30,
+    textAlign: "center",
+    paddingHorizontal: 40,
+    lineHeight: 20,
+  },
+  footer: {
+    alignItems: "center",
+    paddingBottom: 60,
+    zIndex: 10,
+  },
+  statusText: {
+    color: "#a1a1aa",
+    fontSize: 14,
+    fontFamily: "Raleway_400Regular",
+    letterSpacing: 1,
+    marginBottom: 30,
+    textTransform: "uppercase",
+  },
+  micButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  micButtonDisabled: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderColor: "rgba(255,255,255,0.05)",
+  },
+  micButtonActive: {
+    backgroundColor: "rgba(239, 68, 68, 0.3)",
+    borderColor: "rgba(239, 68, 68, 0.6)",
+  },
+  noEpisodeTitle: {
+    color: "#fff",
+    fontSize: 20,
+    fontFamily: "Raleway_700Bold",
+    marginTop: 20,
+  },
+  noEpisodeDesc: {
+    color: "#71717a",
+    fontSize: 14,
+    fontFamily: "Raleway_400Regular",
+    textAlign: "center",
+    marginTop: 10,
+    lineHeight: 22,
+    paddingHorizontal: 40,
+  },
+  goBackBtn: {
+    marginTop: 30,
+    backgroundColor: "rgba(139, 92, 246, 0.2)",
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.5)",
+  },
+  goBackText: {
+    color: "#a855f7",
+    fontFamily: "Raleway_700Bold",
+    fontSize: 14,
+  },
+});
