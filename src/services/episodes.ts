@@ -59,9 +59,11 @@ export async function fetchEpisodesFromFeed(feedUrl: string, limit: number = 10)
 
       return {
         id: String(id),
-        title: item.title,
-        description: item.description || item["itunes:summary"] || "",
-        pubDate: item.pubDate,
+        title: String(item.title || ""),
+        description: typeof (item.description || item["itunes:summary"]) === 'string' 
+          ? (item.description || item["itunes:summary"]) 
+          : JSON.stringify(item.description || item["itunes:summary"] || ""),
+        pubDate: String(item.pubDate || ""),
         audioUrl,
         duration: String(duration),
         imageUrl,

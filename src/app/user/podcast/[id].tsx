@@ -56,7 +56,11 @@ export default function PodcastDetails() {
       const eps = await fetchEpisodesFromFeed(data.feed_url, 10000); 
       
       // Sort by date ascending to show from Ep 1 (oldest first)
-      eps.sort((a, b) => new Date(a.pubDate).getTime() - new Date(b.pubDate).getTime());
+      eps.sort((a, b) => {
+        const tA = a.pubDate ? new Date(a.pubDate).getTime() : 0;
+        const tB = b.pubDate ? new Date(b.pubDate).getTime() : 0;
+        return (isNaN(tA) ? 0 : tA) - (isNaN(tB) ? 0 : tB);
+      });
 
       const enhancedEps = eps.map(e => ({
         ...e,
@@ -107,9 +111,11 @@ export default function PodcastDetails() {
                     <View style={styles.episodeInfo}>
                       <Text style={styles.episodeTitle} numberOfLines={2}>{ep.title}</Text>
                       <Text style={styles.episodeDesc} numberOfLines={2}>
-                        {ep.description.replace(/<[^>]*>?/gm, '').trim()}
+                        {String(ep.description || "").replace(/<[^>]*>?/gm, '').trim()}
                       </Text>
-                      <Text style={styles.episodeDate}>{ep.duration ? ep.duration : new Date(ep.pubDate).toLocaleDateString()}</Text>
+                      <Text style={styles.episodeDate}>
+                        {ep.duration ? ep.duration : (ep.pubDate ? (isNaN(new Date(ep.pubDate).getTime()) ? "Unknown Date" : new Date(ep.pubDate).toLocaleDateString()) : "Unknown Date")}
+                      </Text>
                     </View>
                     <TouchableOpacity 
                       style={styles.playButton} 

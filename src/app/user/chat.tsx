@@ -118,7 +118,7 @@ export default function ChatScreen() {
         <TouchableOpacity onPress={() => router.back()} style={{ padding: 10, backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 20 }}>
           <Text style={{ color: "white", fontWeight: "bold" }}>← Back</Text>
         </TouchableOpacity>
-        <Text style={{ color: "white", fontSize: 18, fontWeight: "bold", fontFamily: "Outfit_700Bold" }}>Podex AI</Text>
+        <Text style={{ color: "white", fontSize: 18, fontWeight: "bold", fontFamily: "Raleway_700Bold" }}>Podex AI</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -184,7 +184,7 @@ export default function ChatScreen() {
                 <Text style={{ fontSize: 32 }}>{recording ? "⏹" : isPlayingAudio ? "🔊" : "🎤"}</Text>
               </TouchableOpacity>
             </Animated.View>
-            <Text style={{ color: "#a1a1aa", marginTop: 15, fontSize: 12, fontFamily: "Outfit_400Regular", letterSpacing: 1 }}>
+            <Text style={{ color: "#a1a1aa", marginTop: 15, fontSize: 12, fontFamily: "Raleway_400Regular", letterSpacing: 1 }}>
               {recording ? "LISTENING..." : isPlayingAudio ? "SPEAKING..." : "TAP TO TALK"}
             </Text>
           </View>

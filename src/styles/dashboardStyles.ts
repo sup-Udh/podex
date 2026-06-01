@@ -20,6 +20,16 @@ export const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 140,
   },
+  heroContainer: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  heroGreeting: {
+    color: "#fff",
+    fontSize: 28,
+    fontFamily: "Raleway_700Bold",
+  },
   section: {
     paddingHorizontal: 24,
     marginBottom: 32,
