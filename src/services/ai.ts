@@ -129,3 +129,73 @@ export const generateSpeech = async (text: string): Promise<string> => {
     reader.readAsDataURL(blob);
   });
 };
+
+export const generateTagsFromTranscript = async (transcriptText: string): Promise<string[]> => {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${OPENAI_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: "You are an AI that generates relevant tags for a podcast transcript. Read the transcript and generate 5 to 10 highly specific, relevant tags based ONLY on what is actually discussed. Return the tags as a JSON object with a single key 'tags' containing an array of strings. Output all tags in lowercase."
+        },
+        {
+          role: "user",
+          content: `Transcript: ${transcriptText.slice(0, 15000)}` // Limit input to avoid massive token usage for now
+        }
+      ]
+    })
+  });
+
+  const data = await response.json();
+  if (data.error) throw new Error(data.error.message);
+  
+  try {
+    const content = JSON.parse(data.choices[0].message.content);
+    return content.tags || [];
+  } catch (e) {
+    console.error("Failed to parse tags JSON", e);
+    return [];
+  }
+};
+
+export const extractTaggedItems = async (transcriptText: string, tags: string[]): Promise<any[]> => {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${OPENAI_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: "You are an AI that extracts key moments from a podcast transcript based on provided tags. For each tag provided, extract up to 2 key moments from the transcript. Return a JSON object with a single key 'items' containing an array of objects. Each object MUST have: 'tag' (the tag string), 'content' (the actual insight/quote), 'context' (why it was mentioned), and 'timestamp_approx' (the approximate timestamp string, e.g. '44:20', or 'Unknown' if not specified)."
+        },
+        {
+          role: "user",
+          content: `Tags: ${JSON.stringify(tags)}\n\nTranscript: ${transcriptText.slice(0, 15000)}`
+        }
+      ]
+    })
+  });
+
+  const data = await response.json();
+  if (data.error) throw new Error(data.error.message);
+  
+  try {
+    const content = JSON.parse(data.choices[0].message.content);
+    return content.items || [];
+  } catch (e) {
+    console.error("Failed to parse extracted items JSON", e);
+    return [];
+  }
+};

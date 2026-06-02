@@ -6,7 +6,7 @@ import { Episode } from "../services/episodes";
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../services/supabase";
 import { requestTranscription, pollTranscription } from "../services/transcription";
-import { getEmbeddings } from "../services/ai";
+import { getEmbeddings, generateTagsFromTranscript, extractTaggedItems } from "../services/ai";
 
 interface PlayerContextType {
   currentEpisode: Episode | null;
@@ -118,6 +118,41 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const processClipBrain = async (userId: string, ep: Episode, transcriptText: string) => {
+    try {
+      console.log("Starting Clip Brain pipeline for", ep.title);
+      // 1. Generate Tags
+      const tags = await generateTagsFromTranscript(transcriptText);
+      if (!tags || tags.length === 0) return;
+      console.log("Generated tags:", tags);
+
+      // 2. Extract Items
+      const items = await extractTaggedItems(transcriptText, tags);
+      if (!items || items.length === 0) return;
+      console.log(`Extracted ${items.length} items`);
+
+      // 3. Bulk Insert into Supabase
+      const rowsToInsert = items.map(item => ({
+        user_id: userId,
+        podcast_id: ep.podcastId,
+        episode_id: ep.id,
+        tag: item.tag.toLowerCase(), // Normalize
+        content: item.content,
+        context: item.context,
+        timestamp_approx: item.timestamp_approx
+      }));
+
+      const { error } = await supabase.from("clip_brain_items").insert(rowsToInsert);
+      if (error) {
+        console.error("Failed to insert Clip Brain items:", error);
+      } else {
+        console.log("Successfully saved Clip Brain items to database.");
+      }
+    } catch (e) {
+      console.error("Clip Brain pipeline failed:", e);
+    }
+  };
+
   const checkAndTranscribe = async (userId: string, ep: Episode) => {
     setTranscriptStatus("processing");
     setTranscriptText(null);
@@ -159,6 +194,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
           }
 
           chunkAndEmbed(userId, ep, result.words);
+          
+          // Fire and forget the Clip Brain extraction
+          processClipBrain(userId, ep, result.text);
         } else {
           setTranscriptStatus("error");
           await supabase.from("episode_transcripts").update({ status: "failed" }).eq("user_id", userId).eq("episode_id", ep.id);

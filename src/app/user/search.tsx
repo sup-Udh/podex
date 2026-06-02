@@ -62,6 +62,60 @@ export default function SearchScreen() {
   const [loading, setLoading] = useState(false);
   const [savingId, setSavingId] = useState<number | null>(null);
 
+  // Clip Brain State
+  const [tags, setTags] = useState<string[]>([]);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [tagClips, setTagClips] = useState<any[]>([]);
+  const [loadingClips, setLoadingClips] = useState(false);
+
+  useEffect(() => {
+    if (session?.user) {
+      loadTags();
+    }
+  }, [session]);
+
+  const loadTags = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("clip_brain_items")
+        .select("tag")
+        .eq("user_id", session?.user.id);
+      
+      if (error) throw error;
+      
+      // Deduplicate tags
+      const uniqueTags = Array.from(new Set(data.map(item => item.tag.toLowerCase())));
+      setTags(uniqueTags);
+    } catch (e) {
+      console.error("Failed to load tags:", e);
+    }
+  };
+
+  const handleTagPress = async (tag: string) => {
+    if (selectedTag === tag) {
+      setSelectedTag(null);
+      setTagClips([]);
+      return;
+    }
+    
+    setSelectedTag(tag);
+    setLoadingClips(true);
+    try {
+      const { data, error } = await supabase
+        .from("clip_brain_items")
+        .select("*")
+        .eq("user_id", session?.user.id)
+        .eq("tag", tag);
+        
+      if (error) throw error;
+      setTagClips(data);
+    } catch (e) {
+      console.error("Failed to load clips:", e);
+    } finally {
+      setLoadingClips(false);
+    }
+  };
+
   const handleSearch = async () => {
     if (!query.trim()) return;
     setLoading(true);
@@ -187,110 +241,89 @@ export default function SearchScreen() {
               )}
             </Animated.View>
           ) : (
-            // Default Empty State matching new design
+            // Clip Brain UI
             <>
-              {/* Filter Pills */}
+              {/* Dynamic Tag Cloud */}
               <Animated.View entering={FadeInDown.delay(150).duration(600)} style={styles.filtersContainer}>
-                <View style={[styles.filterRow, { flexWrap: "wrap", justifyContent: "center" }]}>
-                  {["📚 BOOKS", "🧬 FRAMEWORKS", "💊 SUPPLEMENTS", "👥 GUESTS", "📊 STATISTICS"].map((tag, idx) => (
-                    <View key={idx} style={styles.filterPill}>
-                      <Text style={styles.filterText}>{tag}</Text>
-                    </View>
-                  ))}
+                <View style={[styles.sectionHeaderRow, { marginBottom: 12, paddingHorizontal: 24 }]}>
+                  <Text style={styles.sectionTitle}>Your Clip Brain</Text>
                 </View>
+                
+                {tags.length > 0 ? (
+                  <View style={[styles.filterRow, { flexWrap: "wrap", justifyContent: "flex-start", paddingHorizontal: 24, gap: 10 }]}>
+                    {tags.map((tag, idx) => (
+                      <TouchableOpacity 
+                        key={idx} 
+                        style={[
+                          styles.filterPill, 
+                          selectedTag === tag && { backgroundColor: "rgba(139, 92, 246, 0.4)", borderColor: "#8b5cf6" }
+                        ]}
+                        onPress={() => handleTagPress(tag)}
+                      >
+                        <Text style={[
+                          styles.filterText,
+                          selectedTag === tag && { color: "#fff" }
+                        ]}>
+                          # {tag}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={{ color: "#8a8a8a", paddingHorizontal: 24, fontStyle: "italic" }}>
+                    Listen to some podcasts to start building your AI Clip Brain.
+                  </Text>
+                )}
               </Animated.View>
 
-              {/* Vertical Metrics Stack */}
-              <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.metricsContainer}>
-                <View style={styles.metricCard}>
-                  <View style={[styles.metricIconBox, { backgroundColor: "rgba(255,255,255,0.05)" }]}>
-                    <Text style={styles.metricIcon}>📚</Text>
-                  </View>
-                  <View style={styles.metricInfo}>
-                    <Text style={styles.metricTitle}>Books Mentioned</Text>
-                    <Text style={styles.metricSub}>Syncing with GoodReads...</Text>
-                  </View>
-                  <View style={styles.metricCountBox}>
-                    <Text style={[styles.metricCount, { color: "#d1d1d1" }]}>124</Text>
-                    <Text style={styles.metricArrow}>›</Text>
-                  </View>
-                </View>
-
-                <View style={styles.metricCard}>
-                  <View style={[styles.metricIconBox, { backgroundColor: "rgba(139, 92, 246, 0.15)" }]}>
-                    <Text style={styles.metricIcon}>🧬</Text>
-                  </View>
-                  <View style={styles.metricInfo}>
-                    <Text style={styles.metricTitle}>Frameworks Saved</Text>
-                    <Text style={styles.metricSub}>Models for better thinking</Text>
-                  </View>
-                  <View style={styles.metricCountBox}>
-                    <Text style={[styles.metricCount, { color: "#d1d1d1" }]}>42</Text>
-                    <Text style={styles.metricArrow}>›</Text>
-                  </View>
-                </View>
-
-                <View style={styles.metricCard}>
-                  <View style={[styles.metricIconBox, { backgroundColor: "rgba(255,255,255,0.05)" }]}>
-                    <Text style={styles.metricIcon}>👥</Text>
-                  </View>
-                  <View style={styles.metricInfo}>
-                    <Text style={styles.metricTitle}>Guests Discovered</Text>
-                    <Text style={styles.metricSub}>Profiles across episodes</Text>
-                  </View>
-                  <View style={styles.metricCountBox}>
-                    <Text style={[styles.metricCount, { color: "#d1d1d1" }]}>312</Text>
-                    <Text style={styles.metricArrow}>›</Text>
-                  </View>
-                </View>
-
-                <View style={styles.metricCard}>
-                  <View style={[styles.metricIconBox, { backgroundColor: "rgba(244, 114, 182, 0.15)" }]}>
-                    <Text style={styles.metricIcon}>📊</Text>
-                  </View>
-                  <View style={styles.metricInfo}>
-                    <Text style={styles.metricTitle}>Statistics Captured</Text>
-                    <Text style={styles.metricSub}>Data points & research</Text>
-                  </View>
-                  <View style={styles.metricCountBox}>
-                    <Text style={[styles.metricCount, { color: "#f472b6" }]}>89</Text>
-                    <Text style={styles.metricArrow}>›</Text>
-                  </View>
-                </View>
-              </Animated.View>
-
-              {/* Trending In Your Library */}
-              <Animated.View entering={FadeInDown.delay(300).duration(600)} style={styles.section}>
-                <View style={styles.sectionHeaderRow}>
-                  <Text style={styles.sectionTitle}>Trending in Your Library</Text>
-                  <TouchableOpacity>
-                    <Text style={styles.viewAllText}>VIEW INSIGHTS</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
-                  <View style={styles.trendingCard}>
-                    <LinearGradient colors={["#5c1f8a", "#050014"]} style={styles.trendingImagePlaceholder} />
-                    <View style={styles.trendingBadge}><Text style={styles.trendingBadgeText}>TOPIC</Text></View>
-                    <View style={styles.trendingDetails}>
-                      <Text style={styles.trendingTitle}>AGI Evolution</Text>
-                      <Text style={styles.trendingSub}>Discussed in 12 episodes this week.</Text>
-                    </View>
-                  </View>
+              {/* Tag Clips */}
+              {selectedTag && (
+                <Animated.View entering={FadeInDown.duration(400)} style={{ marginTop: 24, paddingHorizontal: 24 }}>
+                  <Text style={{ color: "#8b5cf6", fontSize: 16, fontFamily: "Raleway_700Bold", marginBottom: 16 }}>
+                    Moments tagged with "{selectedTag}"
+                  </Text>
                   
-                  <View style={styles.trendingCard}>
-                    <LinearGradient colors={["#1f3a8a", "#050014"]} style={styles.trendingImagePlaceholder} />
-                    <View style={[styles.trendingBadge, { backgroundColor: "rgba(59, 130, 246, 0.8)" }]}><Text style={styles.trendingBadgeText}>CONCEPT</Text></View>
-                    <View style={styles.trendingDetails}>
-                      <Text style={styles.trendingTitle}>Dopamine Detox</Text>
-                      <Text style={styles.trendingSub}>Huberman Lab peak mentions.</Text>
+                  {loadingClips ? (
+                    <ActivityIndicator size="small" color="#8b5cf6" />
+                  ) : tagClips.length > 0 ? (
+                    <View style={{ gap: 16 }}>
+                      {tagClips.map((clip, idx) => (
+                        <TouchableOpacity 
+                          key={clip.id || idx} 
+                          style={{
+                            backgroundColor: "rgba(255,255,255,0.05)",
+                            borderRadius: 16,
+                            padding: 16,
+                            borderWidth: 1,
+                            borderColor: "rgba(255,255,255,0.08)"
+                          }}
+                          onPress={() => router.push(`/user/podcast/${clip.podcast_id}` as any)}
+                        >
+                          <Text style={{ color: "#fff", fontSize: 15, fontFamily: "Raleway_600SemiBold", marginBottom: 8 }}>
+                            "{clip.content}"
+                          </Text>
+                          <Text style={{ color: "#a1a1aa", fontSize: 13, fontFamily: "Raleway_400Regular", marginBottom: 12 }}>
+                            {clip.context}
+                          </Text>
+                          <View style={{ flexDirection: "row", alignItems: "center" }}>
+                            <Text style={{ color: "#8b5cf6", fontSize: 12, fontFamily: "Raleway_700Bold" }}>
+                              ⏱️ {clip.timestamp_approx || "Unknown Time"}
+                            </Text>
+                            <Text style={{ color: "#666", fontSize: 12, marginLeft: "auto", fontFamily: "Raleway_400Regular" }}>
+                              Tap to go to episode
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
                     </View>
-                  </View>
-                </ScrollView>
-              </Animated.View>
+                  ) : (
+                    <Text style={{ color: "#8a8a8a" }}>No clips found for this tag.</Text>
+                  )}
+                </Animated.View>
+              )}
 
               {/* Ask Podex AI Area */}
-              <Animated.View entering={FadeInDown.delay(400).duration(600)} style={styles.section}>
+              <Animated.View entering={FadeInDown.delay(300).duration(600)} style={[styles.section, { marginTop: 40 }]}>
                 <View style={styles.aiCard}>
                   <View style={styles.aiContent}>
                     <View style={styles.aiHeader}>
@@ -298,26 +331,14 @@ export default function SearchScreen() {
                       <Text style={styles.aiTitle}>Ask Podex AI</Text>
                     </View>
                     <Text style={styles.aiDescription}>
-                      I've indexed 400 hours of your listening history. You can ask me to summarize complex topics or recall specific moments.
+                      I've indexed your listening history. You can ask me to summarize topics or recall specific moments.
                     </Text>
 
                     <View style={styles.promptBubble}>
                       <Text style={styles.promptText}>"Summarize Peter Attia's views on Zone 2 training from last week"</Text>
                     </View>
-                    <View style={styles.promptBubble}>
-                      <Text style={styles.promptText}>"Find the part where Lex asked about the meaning of life"</Text>
-                    </View>
                   </View>
                 </View>
-              </Animated.View>
-              
-              {/* Bottom Nav Extension Filter */}
-              <Animated.View entering={FadeInDown.delay(500).duration(600)} style={{ flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 24, marginBottom: 12 }}>
-                 {["EPISODES", "QUOTES", "BOOKS", "IDEAS"].map((t, i) => (
-                    <TouchableOpacity key={i} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: i === 0 ? "rgba(255,255,255,0.1)" : "transparent" }}>
-                        <Text style={{ color: i === 0 ? "#fff" : "#666", fontSize: 11, fontFamily: "Raleway_700Bold", letterSpacing: 1 }}>{t}</Text>
-                    </TouchableOpacity>
-                 ))}
               </Animated.View>
             </>
           )}
