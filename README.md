@@ -1,7 +1,9 @@
 # 🎙️ Podex
 
 <div align="center">
-  <img src="./assets/logo.png" width="120" alt="Podex Logo" />
+
+
+<img width="1774" height="887" alt="image" src="https://github.com/user-attachments/assets/d3201c7b-a7b3-4f22-af0e-2c1c493474aa" />
 
 ### Spotify plays podcasts. Podex remembers them.
 
