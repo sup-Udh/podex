@@ -13,37 +13,24 @@ Transform every podcast you listen to into a searchable personal knowledge base.
 
 ---
 
-## 🚀 What is Podex?
+# Podex
 
-Podex is an AI-powered podcast platform designed to help listeners retain and revisit the knowledge they consume.
+### Spotify plays podcasts. Podex remembers them.
 
-Traditional podcast apps focus on playing audio.
+Podex is an AI-powered podcast platform designed to help listeners retain, organize, and revisit the knowledge they consume.
 
-Podex focuses on helping you remember what you've learned.
+Traditional podcast apps focus on audio playback. Podex focuses on understanding, remembering, and making podcast knowledge accessible long after an episode ends.
 
-Every episode can become searchable, chat-enabled, and connected to a personal knowledge system that grows over time.
+## Overview
 
----
+Podex transforms podcasts into searchable knowledge.
 
-## ❌ The Problem
+Every episode can become:
 
-People spend hundreds of hours listening to podcasts.
-
-Yet they quickly forget:
-
-* Books that were recommended
-* Frameworks that were explained
-* Statistics that were mentioned
-* Quotes from guests
-* Actionable advice and insights
-
-Podcasts contain enormous amounts of valuable information, but today's podcast players provide no effective way to retain it.
-
----
-
-## ✅ The Solution
-
-Podex transforms passive listening into active knowledge acquisition.
+* Searchable
+* Chat-enabled
+* Organized
+* Connected to a personal knowledge library
 
 Instead of:
 
@@ -67,11 +54,9 @@ Search
 Remember
 ```
 
----
+## Features
 
-## ✨ Features
-
-### 🎧 Podcast Discovery
+### Podcast Discovery
 
 Discover and subscribe to podcasts from across the web.
 
@@ -80,67 +65,42 @@ Discover and subscribe to podcasts from across the web.
 * Subscribe to creators
 * Build a personalized library
 
----
+### Clip Brain
 
-### 🧠 Clip Brain
-
-Podex automatically extracts valuable information from episodes, including:
+Extract valuable information from podcast episodes, including:
 
 * Books
 * Frameworks
 * Quotes
 * Recommendations
 * Statistics
-* Guest mentions
 * Key insights
 
-Instead of re-listening to hours of audio, instantly access the moments that matter.
-
----
-
-### 🔍 Search Everything You've Heard
+### Search
 
 Search across your entire listening history.
 
 Examples:
 
-```text
-What books did Huberman recommend?
+* What books did Huberman recommend?
+* Show every mention of AGI.
+* What productivity frameworks were discussed?
+* Find all startup advice I've heard.
 
-Show every mention of AGI.
+### Episode Conversations
 
-What productivity frameworks were discussed?
+Interact directly with podcast episodes.
 
-Find all startup advice I've heard.
-```
+Examples:
 
----
+* Summarize this episode.
+* What were the key takeaways?
+* What books were recommended?
+* What did they say about sleep?
 
-### 💬 Talk To Any Episode
+### Knowledge Library
 
-Every episode becomes interactive.
-
-Ask questions such as:
-
-```text
-Summarize this episode.
-
-What were the key takeaways?
-
-What books were recommended?
-
-What did they say about sleep?
-```
-
-Answers are grounded in the episode transcript.
-
----
-
-### 📚 Knowledge Library
-
-Everything you've learned in one place.
-
-Store and revisit:
+A centralized repository for:
 
 * Books
 * Ideas
@@ -149,37 +109,15 @@ Store and revisit:
 * Recommendations
 * Insights
 
-Your personal second brain for podcasts.
+### Debate Mode
 
----
+Compare opposing viewpoints from different experts and podcasts to better understand complex topics.
 
-### ⚔️ Debate Mode
+### Daily Investigation
 
-Compare opposing viewpoints from different podcasters.
+Personalized research reports generated from your listening history and interests.
 
-Examples:
-
-* Huberman vs Peter Attia
-* AI Optimists vs AI Skeptics
-* Different health and productivity philosophies
-
-Understand multiple perspectives on important topics.
-
----
-
-### 🔬 Daily Investigation
-
-Podex generates personalized research topics based on your listening history.
-
-Example:
-
-> Why do high performers prioritize sleep over productivity hacks?
-
-Podex gathers evidence from multiple podcasts and presents a structured investigation.
-
----
-
-## 🏗️ How It Works
+## Architecture
 
 ```text
 Podcast Episode
@@ -190,21 +128,19 @@ AI Processing
         ↓
 Knowledge Extraction
         ↓
-Search & Chat
+Search & Conversations
         ↓
 Personal Knowledge Base
 ```
 
----
-
-## ⚙️ Tech Stack
+## Technology Stack
 
 ### Frontend
 
 * React Native
-* Expo SDK 56
-* Expo Router
+* Expo
 * TypeScript
+* Expo Router
 
 ### Backend
 
@@ -213,7 +149,7 @@ Personal Knowledge Base
 
 ### Authentication
 
-* Supabase Auth
+* Supabase Authentication
 * Google OAuth
 * Email Authentication
 
@@ -233,28 +169,15 @@ Personal Knowledge Base
 * RSS Feeds
 * iTunes Search API
 
----
+## Vision
 
-## 🌟 Vision
+Podex is building a memory layer for audio.
 
-Podex isn't trying to be another podcast player.
-
-It's building a memory layer for audio.
-
-A system that remembers:
-
-* Everything you've listened to
-* Every idea you've discovered
-* Every recommendation you've heard
-
-So knowledge compounds over time instead of disappearing.
+A system that remembers the ideas, recommendations, frameworks, and insights users encounter through podcasts, allowing knowledge to compound over time rather than disappear after listening.
 
 ---
 
-<div align="center">
+### Spotify plays podcasts.
 
-## 🎙️ Spotify plays podcasts.
+## Podex remembers them.
 
-# 🧠 Podex remembers them.
-
-</div>
