@@ -240,9 +240,6 @@ export default function Dashboard() {
                           <Text style={{ color: "#fff", fontSize: 14, fontFamily: "Raleway_700Bold" }} numberOfLines={2}>{ep.title}</Text>
                         </View>
                         
-                        <View style={{ position: "absolute", top: 12, right: 12, width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", alignItems: "center" }}>
-                          <Text style={{ color: "#fff", fontSize: 14 }}>▶</Text>
-                        </View>
                       </TouchableOpacity>
                     );
                   })}

@@ -47,9 +47,6 @@ export default function ChatScreen() {
         ttsPlayerRef.current.remove();
         ttsPlayerRef.current = null;
       }
-      if (audioRecorder.isRecording) {
-        audioRecorder.stop();
-      }
     };
   }, []);
 
