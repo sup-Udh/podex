@@ -1,7 +1,7 @@
 // audio playback in context om n the entire app
 
-import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from "expo-av";
-import React, { createContext, useContext, useEffect, useState, useRef } from "react";
+import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from "react";
 import { Episode } from "../services/episodes";
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../services/supabase";
@@ -27,16 +27,32 @@ interface PlayerContextType {
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [audioSource, setAudioSource] = useState<string | null>(null);
+  const player = useAudioPlayer(audioSource ?? undefined);
+  const status = useAudioPlayerStatus(player);
+
   const [currentEpisode, setCurrentEpisode] = useState<Episode | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [positionMillis, setPositionMillis] = useState(0);
-  const [durationMillis, setDurationMillis] = useState(0);
   const [transcriptStatus, setTranscriptStatus] = useState<"idle" | "processing" | "completed" | "error">("idle");
   const [transcriptText, setTranscriptText] = useState<string | null>(null);
 
+  // Safely derive state from status — guard against NaN/undefined
+  const isPlaying = status.playing ?? false;
+  const positionMillis = Number.isFinite(status.currentTime) ? status.currentTime * 1000 : 0;
+  const durationMillis = Number.isFinite(status.duration) ? status.duration * 1000 : 0;
+
   const { session } = useAuth();
   const lastSyncRef = useRef(0);
+
+  // Sync to Supabase every 10 seconds
+  useEffect(() => {
+    if (session?.user && isPlaying && currentEpisode) {
+      const now = Date.now();
+      if (now - lastSyncRef.current > 10000) {
+        lastSyncRef.current = now;
+        syncProgressToDB(session.user.id, currentEpisode, positionMillis, durationMillis);
+      }
+    }
+  }, [isPlaying, positionMillis, durationMillis, currentEpisode, session]);
 
   const syncProgressToDB = async (userId: string, ep: Episode, position: number, duration: number) => {
     try {
@@ -158,133 +174,92 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Configure audio for background playback
-    Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      staysActiveInBackground: true,
-      interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-      playsInSilentModeIOS: true,
-      shouldDuckAndroid: true,
-      interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
-      playThroughEarpieceAndroid: false,
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: true,
+      interruptionMode: 'doNotMix',
     });
   }, []);
 
-  const playEpisode = async (episode: Episode) => {
+  const playEpisode = useCallback(async (episode: Episode) => {
     try {
-      if (sound) {
-        await sound.unloadAsync();
-        setSound(null);
+      if (currentEpisode && session?.user) {
+        // save previous episode sync
+        syncProgressToDB(session.user.id, currentEpisode, positionMillis, durationMillis);
       }
-
+      
       setCurrentEpisode(episode);
-      setIsPlaying(true);
-      setPositionMillis(0);
-      setDurationMillis(0);
 
       if (session?.user) {
         checkAndTranscribe(session.user.id, episode);
       }
 
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: episode.audioUrl },
-        { shouldPlay: true, progressUpdateIntervalMillis: 500 },
-        (status) => {
-          if (status.isLoaded) {
-            setIsPlaying(status.isPlaying);
-            setPositionMillis(status.positionMillis);
-            if (status.durationMillis) {
-              setDurationMillis(status.durationMillis);
-            }
-
-            // Sync to Supabase every 10 seconds
-            if (session?.user && status.isPlaying) {
-              const now = Date.now();
-              if (now - lastSyncRef.current > 10000) {
-                lastSyncRef.current = now;
-                syncProgressToDB(
-                  session.user.id,
-                  episode,
-                  status.positionMillis,
-                  status.durationMillis || 0
-                );
-              }
-            }
-          } else if (status.error) {
-            console.log("Playback Error: ", status.error);
-          }
-        }
-      );
-
-      setSound(newSound);
+      // Set the audio source — the useAudioPlayer hook will react to this
+      setAudioSource(episode.audioUrl);
     } catch (error) {
       console.log("Error playing audio", error);
-      setIsPlaying(false);
     }
-  };
+  }, [currentEpisode, session, positionMillis, durationMillis]);
 
-  const togglePlayPause = async () => {
-    if (!sound) return;
-    
+  // Auto-play when source changes
+  useEffect(() => {
+    if (audioSource && status.isLoaded && !status.playing) {
+      try {
+        player.play();
+      } catch (e) {
+        console.log("Auto-play error:", e);
+      }
+    }
+  }, [audioSource, status.isLoaded]);
+
+  const togglePlayPause = useCallback(async () => {
     try {
       if (isPlaying) {
-        await sound.pauseAsync();
-        setIsPlaying(false);
-        // Final sync on pause
+        player.pause();
         if (session?.user && currentEpisode) {
           syncProgressToDB(session.user.id, currentEpisode, positionMillis, durationMillis);
         }
       } else {
-        await sound.playAsync();
-        setIsPlaying(true);
+        player.play();
       }
     } catch (e) {
       console.error("togglePlayPause error:", e);
     }
-  };
+  }, [isPlaying, session, currentEpisode, positionMillis, durationMillis, player]);
 
-  const pausePlayback = async () => {
-    if (!sound || !isPlaying) return;
+  const pausePlayback = useCallback(async () => {
+    if (!isPlaying) return;
     try {
-      await sound.pauseAsync();
-      setIsPlaying(false);
+      player.pause();
     } catch (e) {
       console.error("pausePlayback error:", e);
     }
-  };
+  }, [isPlaying, player]);
 
-  const seekForward = async () => {
-    if (!sound) return;
-    const newPosition = positionMillis + 15000;
-    await sound.setPositionAsync(Math.min(newPosition, durationMillis));
-  };
+  const seekForward = useCallback(async () => {
+    const dur = Number.isFinite(status.duration) ? status.duration : 0;
+    const newPositionSec = (positionMillis + 15000) / 1000;
+    player.seekTo(Math.min(newPositionSec, dur));
+  }, [positionMillis, status.duration, player]);
 
-  const seekBackward = async () => {
-    if (!sound) return;
-    const newPosition = positionMillis - 15000;
-    await sound.setPositionAsync(Math.max(newPosition, 0));
-  };
+  const seekBackward = useCallback(async () => {
+    const newPositionSec = (positionMillis - 15000) / 1000;
+    player.seekTo(Math.max(newPositionSec, 0));
+  }, [positionMillis, player]);
 
-  const seekTo = async (millis: number) => {
-    if (!sound) return;
-    await sound.setPositionAsync(millis);
-  };
+  const seekTo = useCallback(async (millis: number) => {
+    player.seekTo(millis / 1000);
+  }, [player]);
 
-  const closePlayer = async () => {
-    // Final sync on close
+  const closePlayer = useCallback(async () => {
     if (session?.user && currentEpisode) {
       await syncProgressToDB(session.user.id, currentEpisode, positionMillis, durationMillis);
     }
 
-    if (sound) {
-      await sound.stopAsync();
-      await sound.unloadAsync();
-      setSound(null);
-    }
+    player.pause();
+    setAudioSource(null);
     setCurrentEpisode(null);
-    setIsPlaying(false);
-    setPositionMillis(0);
-    setDurationMillis(0);
-  };
+  }, [session, currentEpisode, positionMillis, durationMillis, player]);
 
   return (
     <PlayerContext.Provider

@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -9,6 +9,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  InteractionManager,
 } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
@@ -28,6 +29,18 @@ export default function PodcastDetails() {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [visibleCount, setVisibleCount] = useState(10);
   const [loading, setLoading] = useState(true);
+  const isNavigating = useRef(false);
+
+  const handleNavigate = (path?: any, action?: () => void) => {
+    if (isNavigating.current) return;
+    isNavigating.current = true;
+    if (action) action();
+    if (path) router.push(path);
+    else router.back();
+    setTimeout(() => {
+      isNavigating.current = false;
+    }, 1000);
+  };
 
   useEffect(() => {
     if (id) {
@@ -52,27 +65,34 @@ export default function PodcastDetails() {
 
       setPodcast(data);
 
-      // Fetch all episodes
-      const eps = await fetchEpisodesFromFeed(data.feed_url, 10000); 
-      
-      // Sort by date ascending to show from Ep 1 (oldest first)
-      eps.sort((a, b) => {
-        const tA = a.pubDate ? new Date(a.pubDate).getTime() : 0;
-        const tB = b.pubDate ? new Date(b.pubDate).getTime() : 0;
-        return (isNaN(tA) ? 0 : tA) - (isNaN(tB) ? 0 : tB);
+      InteractionManager.runAfterInteractions(async () => {
+        try {
+          // Fetch all episodes
+          const eps = await fetchEpisodesFromFeed(data.feed_url, 10000); 
+          
+          // Sort by date ascending to show from Ep 1 (oldest first)
+          eps.sort((a, b) => {
+            const tA = a.pubDate ? new Date(a.pubDate).getTime() : 0;
+            const tB = b.pubDate ? new Date(b.pubDate).getTime() : 0;
+            return (isNaN(tA) ? 0 : tA) - (isNaN(tB) ? 0 : tB);
+          });
+
+          const enhancedEps = eps.map((e: any) => ({
+            ...e,
+            podcastName: data.collection_name,
+            imageUrl: data.artwork_url,
+            podcastId: data.collection_id
+          }));
+
+          setEpisodes(enhancedEps);
+        } catch (err) {
+          console.log(err);
+        } finally {
+          setLoading(false);
+        }
       });
-
-      const enhancedEps = eps.map(e => ({
-        ...e,
-        podcastName: data.collection_name,
-        imageUrl: data.artwork_url,
-        podcastId: data.collection_id
-      }));
-
-      setEpisodes(enhancedEps);
     } catch (err) {
       console.log(err);
-    } finally {
       setLoading(false);
     }
   };
@@ -83,7 +103,7 @@ export default function PodcastDetails() {
         <PremiumBackground />
 
         <View style={styles.topBar}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backButton} onPress={() => handleNavigate()}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
         </View>
@@ -137,10 +157,7 @@ export default function PodcastDetails() {
                     </View>
                     <TouchableOpacity 
                       style={styles.playButton} 
-                      onPress={() => {
-                        playEpisode(ep);
-                        router.push("/user/player" as any);
-                      }}
+                      onPress={() => handleNavigate("/user/player", () => playEpisode(ep))}
                     >
                       <LinearGradient colors={["#8b5cf6", "#6d28d9"]} style={StyleSheet.absoluteFill} pointerEvents="none" />
                       <Text style={styles.playIcon}>▶</Text>

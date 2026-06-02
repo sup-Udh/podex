@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -37,6 +37,17 @@ export default function Dashboard() {
   const [listeningHistory, setListeningHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(10);
+  const isNavigating = useRef(false);
+
+  const handleNavigate = (path: any, action?: () => void) => {
+    if (isNavigating.current) return;
+    isNavigating.current = true;
+    if (action) action();
+    router.push(path);
+    setTimeout(() => {
+      isNavigating.current = false;
+    }, 1000);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -73,7 +84,7 @@ export default function Dashboard() {
         setEpisodes(JSON.parse(cachedEps));
         setLoading(false);
         // Fetch fresh data silently to get newly posted eps
-        loadDashboardData(true);
+        setTimeout(() => loadDashboardData(true), 500);
       } else {
         loadDashboardData();
       }
@@ -101,21 +112,21 @@ export default function Dashboard() {
 
       // 2. Fetch episodes for all feeds
       let allEpisodes: Episode[] = [];
-      await Promise.all(
-        data.map(async (pod) => {
-          if (pod.feed_url) {
-            const eps = await fetchEpisodesFromFeed(pod.feed_url, 20); // Fetch 20 from each to build a robust timeline
-            // Inject podcast name and image into episode for UI if missing
-            const enhancedEps = eps.map(e => ({
-              ...e,
-              podcastName: e.podcastName || pod.collection_name,
-              imageUrl: e.imageUrl || pod.artwork_url,
-              podcastId: pod.collection_id
-            }));
-            allEpisodes = [...allEpisodes, ...enhancedEps];
-          }
-        })
-      );
+      for (const pod of data) {
+        if (pod.feed_url) {
+          // Yield to event loop to prevent JS thread blocking
+          await new Promise(resolve => setTimeout(resolve, 50));
+          const eps = await fetchEpisodesFromFeed(pod.feed_url, 20); // Fetch 20 from each to build a robust timeline
+          // Inject podcast name and image into episode for UI if missing
+          const enhancedEps = eps.map((e: any) => ({
+            ...e,
+            podcastName: e.podcastName || pod.collection_name,
+            imageUrl: e.imageUrl || pod.artwork_url,
+            podcastId: pod.collection_id
+          }));
+          allEpisodes = [...allEpisodes, ...enhancedEps];
+        }
+      }
 
       // Sort by date
       allEpisodes.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
@@ -153,7 +164,7 @@ export default function Dashboard() {
                 <Text style={{ color: "#8a8a8a", fontSize: 16, textAlign: "center", marginBottom: 32 }}>Start building your second brain by adding some podcasts to your library.</Text>
                 <TouchableOpacity 
                   style={{ backgroundColor: "rgba(139, 92, 246, 0.2)", paddingHorizontal: 24, paddingVertical: 14, borderRadius: 24, borderWidth: 1, borderColor: "#8b5cf6" }}
-                  onPress={() => router.push("/user/search" as any)}
+                  onPress={() => handleNavigate("/user/search")}
                 >
                   <Text style={{ color: "#fff", fontFamily: "Raleway_700Bold" }}>Find Podcasts</Text>
                 </TouchableOpacity>
@@ -171,7 +182,7 @@ export default function Dashboard() {
             <Animated.View entering={FadeInDown.delay(100).duration(600)} style={[styles.section, { paddingHorizontal: 0 }]}>
               <View style={styles.sectionHeaderRow}>
                 <Text style={styles.sectionTitle}>Your Podcasts</Text>
-                <TouchableOpacity onPress={() => router.push("/user/library" as any)}>
+                <TouchableOpacity onPress={() => handleNavigate("/user/library")}>
                   <Text style={styles.viewAllText}>Library</Text>
                 </TouchableOpacity>
               </View>
@@ -185,7 +196,7 @@ export default function Dashboard() {
                   }
 
                   return (
-                    <TouchableOpacity key={sub.id} style={styles.subCard} onPress={() => router.push(`/user/podcast/${sub.collection_id}` as any)}>
+                    <TouchableOpacity key={sub.id} style={styles.subCard} onPress={() => handleNavigate(`/user/podcast/${sub.collection_id}`)}>
                       <Image source={{ uri: sub.artwork_url }} style={styles.subImage} contentFit="cover" />
                       <Text style={styles.subTitle} numberOfLines={1}>{sub.collection_name}</Text>
                       {progress > 0 ? (
@@ -216,10 +227,7 @@ export default function Dashboard() {
                       <TouchableOpacity 
                         key={item.id} 
                         style={{ width: 280, backgroundColor: "rgba(255,255,255,0.03)", borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.05)" }}
-                        onPress={() => {
-                          playEpisode(ep);
-                          router.push("/user/player" as any);
-                        }}
+                        onPress={() => handleNavigate("/user/player", () => playEpisode(ep))}
                       >
                         <Image source={{ uri: ep.imageUrl }} style={{ width: "100%", height: 140 }} contentFit="cover" />
                         
@@ -267,10 +275,7 @@ export default function Dashboard() {
                     <View style={styles.footerLeft}>
                       <Text style={styles.footerTime}>{ep.duration ? ep.duration : new Date(ep.pubDate).toLocaleDateString()}</Text>
                     </View>
-                    <TouchableOpacity style={styles.playButtonMini} onPress={() => {
-                      playEpisode(ep);
-                      router.push("/user/player" as any);
-                    }}>
+                    <TouchableOpacity style={styles.playButtonMini} onPress={() => handleNavigate("/user/player", () => playEpisode(ep))}>
                       <LinearGradient colors={["#ec4899", "#8b5cf6"]} style={StyleSheet.absoluteFill} />
                       <Text style={styles.playButtonMiniIcon}>▶</Text>
                     </TouchableOpacity>

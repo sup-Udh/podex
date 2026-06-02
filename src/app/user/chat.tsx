@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { Audio } from "expo-av";
+import { useAudioRecorder, RecordingPresets, setAudioModeAsync, requestRecordingPermissionsAsync, createAudioPlayer } from "expo-audio";
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -29,14 +29,28 @@ export default function ChatScreen() {
 
   const [mode, setMode] = useState<VoiceMode>("idle");
   const [statusLine, setStatusLine] = useState("");
-  const recordingRef = useRef<Audio.Recording | null>(null);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  // For TTS playback we use createAudioPlayer (imperative, not a hook)
+  // because the source is only known after the AI responds.
+  const ttsPlayerRef = useRef<ReturnType<typeof createAudioPlayer> | null>(null);
 
-  // Auto-pause podcast when entering AI mode
+  // Auto-pause podcast when entering AI mode, and cleanup on unmount
   useEffect(() => {
     if (isPlaying) {
       pausePlayback();
     }
+
+    return () => {
+      if (ttsPlayerRef.current) {
+        ttsPlayerRef.current.pause();
+        ttsPlayerRef.current.remove();
+        ttsPlayerRef.current = null;
+      }
+      if (audioRecorder.isRecording) {
+        audioRecorder.stop();
+      }
+    };
   }, []);
 
   // Animation shared values
@@ -114,8 +128,7 @@ export default function ChatScreen() {
 
   // ── Core flow: stop recording → transcribe → ask AI → speak ──
   const processRecording = useCallback(async () => {
-    const rec = recordingRef.current;
-    if (!rec) {
+    if (!audioRecorder.isRecording && mode !== "listening") {
       setStatusLine("No active recording found.");
       setMode("idle");
       return;
@@ -123,9 +136,8 @@ export default function ChatScreen() {
 
     try {
       setStatusLine("Processing audio...");
-      await rec.stopAndUnloadAsync();
-      const uri = rec.getURI();
-      recordingRef.current = null;
+      await audioRecorder.stop();
+      const uri = audioRecorder.uri;
 
       if (!uri) {
         setStatusLine("No audio was captured. Try again.");
@@ -170,27 +182,34 @@ export default function ChatScreen() {
       setStatusLine(`Error: ${e.message || "Unknown error"}`);
       setMode("idle");
     }
-  }, [currentEpisode, session]);
+  }, [currentEpisode, session, mode]);
 
   const playAiSpeech = async (text: string) => {
     try {
       // Switch audio mode from recording → playback
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
+      await setAudioModeAsync({
+        allowsRecording: false,
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
       });
 
       const base64Audio = await generateSpeech(text);
-      const { sound } = await Audio.Sound.createAsync({ uri: base64Audio });
-      soundRef.current = sound;
+      
+      // Clean up previous TTS player if any
+      if (ttsPlayerRef.current) {
+        ttsPlayerRef.current.pause();
+        ttsPlayerRef.current.remove();
+        ttsPlayerRef.current = null;
+      }
 
-      await sound.playAsync();
+      // Create a new imperative player for TTS
+      const ttsPlayer = createAudioPlayer(base64Audio);
+      ttsPlayerRef.current = ttsPlayer;
 
       let speakingStarted = false;
       return new Promise<void>((resolve) => {
-        sound.setOnPlaybackStatusUpdate((status: any) => {
-          if (status.isLoaded && status.isPlaying && !speakingStarted) {
+        const sub = ttsPlayer.addListener("playbackStatusUpdate", (status: any) => {
+          if (status.isLoaded && status.playing && !speakingStarted) {
             speakingStarted = true;
             setMode("speaking");
             setStatusLine("Speaking...");
@@ -198,11 +217,14 @@ export default function ChatScreen() {
           if (status.didJustFinish) {
             setStatusLine("Tap to speak again.");
             setMode("idle");
-            sound.unloadAsync();
-            soundRef.current = null;
+            sub.remove();
+            ttsPlayer.remove();
+            ttsPlayerRef.current = null;
             resolve();
           }
         });
+
+        ttsPlayer.play();
       });
     } catch (e: any) {
       console.error("TTS Error:", e);
@@ -227,23 +249,21 @@ export default function ChatScreen() {
     // START recording
     try {
       setStatusLine("Starting mic...");
-      const { granted } = await Audio.requestPermissionsAsync();
+      const { granted } = await requestRecordingPermissionsAsync();
       if (!granted) {
         Alert.alert("Permission Denied", "Microphone access is required.");
         return;
       }
 
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
+      await setAudioModeAsync({
+        allowsRecording: true,
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
       });
 
-      const { recording: newRecording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
+      await audioRecorder.prepareToRecordAsync();
+      audioRecorder.record();
 
-      recordingRef.current = newRecording;
       setMode("listening");
       setStatusLine("Listening — tap when done.");
 

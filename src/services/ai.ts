@@ -81,7 +81,7 @@ export const transcribeVoice = async (audioUri: string): Promise<string> => {
   const formData = new FormData();
   formData.append("file", {
     uri: audioUri,
-    type: "audio/m4a", // expo-av records in m4a on iOS/Android
+    type: "audio/m4a", // expo-audio records in m4a on iOS/Android
     name: "audio.m4a",
   } as any);
   formData.append("model", "whisper-1");
@@ -118,7 +118,7 @@ export const generateSpeech = async (text: string): Promise<string> => {
     throw new Error(error.error?.message || "Speech generation failed");
   }
 
-  // Convert response to base64 audio string that expo-av can play
+  // Convert response to base64 audio string that expo-audio can play
   const blob = await response.blob();
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
