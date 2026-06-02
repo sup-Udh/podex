@@ -1,56 +1,280 @@
-# Welcome to your Expo app 👋
+````md
+<div align="center">
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+<img src="./assets/logo.png" width="120" alt="Podex Logo" />
 
-## Get started
+# 🎙️ Podex
 
-1. Install dependencies
+### Spotify plays podcasts. Podex remembers them.
 
-   ```bash
-   npm install
-   ```
+<p align="center">
+  <img src="https://img.shields.io/badge/React%20Native-Expo%20SDK%2056-000000?style=for-the-badge&logo=expo" />
+  <img src="https://img.shields.io/badge/OpenAI-GPT--4o-purple?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Supabase-Authentication-3ECF8E?style=for-the-badge&logo=supabase" />
+  <img src="https://img.shields.io/badge/TypeScript-Ready-blue?style=for-the-badge&logo=typescript" />
+</p>
 
-2. Start the app
+<p align="center">
+  Transform every podcast you listen to into a searchable personal knowledge base.
+</p>
 
-   ```bash
-   npx expo start
-   ```
+</div>
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 🚀 The Problem
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+People spend hundreds of hours listening to podcasts.
 
-## Get a fresh project
+But a few days later they forget:
 
-When you're ready, run:
+- 📚 Books that were recommended
+- 🧠 Frameworks that were explained
+- 📈 Statistics that were mentioned
+- 💡 Insights that inspired them
+- 🎙️ Quotes from guests
 
-```bash
-npm run reset-project
+Podcasts are full of valuable information, but traditional podcast apps treat them as disposable audio.
+
+---
+
+## ✨ The Solution
+
+Podex turns passive podcast listening into an active knowledge system.
+
+Instead of:
+
+```text
+Listen
+↓
+Forget
+````
+
+Podex becomes:
+
+```text
+Listen
+↓
+Transcribe
+↓
+Understand
+↓
+Organize
+↓
+Search Forever
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Every episode becomes searchable, chat-enabled, and connected to your personal knowledge graph.
 
-### Other setup steps
+---
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
 
-## Learn more
 
-To learn more about developing your project with Expo, look at the following resources:
+# 🎯 Features
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 🎧 Podcast Discovery
 
-## Join the community
+Discover and subscribe to podcasts from across the internet.
 
-Join our community of developers creating universal apps.
+* Search podcasts
+* Browse episodes
+* Subscribe to creators
+* Build a personalized library
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+## 🧠 Clip Brain
+
+Podex automatically extracts:
+
+* Books
+* Frameworks
+* Recommendations
+* Quotes
+* Statistics
+* Contrarian takes
+* Guest mentions
+* Key insights
+
+Instead of re-listening to hours of audio, instantly access the moments that matter.
+
+---
+
+## 🔍 Search Your Listening History
+
+Ask questions like:
+
+```text
+What books did Huberman recommend?
+
+Show all startup advice I've heard.
+
+Find mentions of AGI.
+
+What productivity frameworks were discussed?
+```
+
+Search across everything you've ever listened to.
+
+---
+
+## 💬 Talk To Any Episode
+
+Every episode becomes interactive.
+
+Examples:
+
+```text
+Summarize this episode.
+
+What were the key takeaways?
+
+What books were mentioned?
+
+What did they say about sleep?
+```
+
+Answers are sourced directly from episode transcripts.
+
+---
+
+## 📚 Knowledge Library
+
+Your personal second brain for podcasts.
+
+Store and revisit:
+
+* Books
+* Ideas
+* Frameworks
+* Quotes
+* Recommendations
+* Insights
+
+All searchable.
+
+All organized.
+
+All yours.
+
+---
+
+## ⚔️ Debate Mode
+
+Compare opposing viewpoints from different podcasters.
+
+Example:
+
+```text
+Huberman vs Peter Attia
+
+Cold Exposure
+
+Benefits
+vs
+Criticisms
+```
+
+Understand both sides of complex topics.
+
+---
+
+## 🔬 Daily Investigation
+
+Every day Podex generates a personalized research topic based on your listening history.
+
+Example:
+
+> Why do high performers prioritize sleep over productivity hacks?
+
+Podex gathers evidence across multiple podcasts and presents a structured investigation.
+
+---
+
+# 🏗️ How It Works
+
+```text
+Podcast Episode
+        ↓
+OpenAI Whisper
+        ↓
+Transcript
+        ↓
+Chunking
+        ↓
+Embeddings
+        ↓
+AI Analysis
+        ↓
+Clip Brain
+        ↓
+Search & Chat
+        ↓
+Personal Knowledge Base
+```
+
+---
+
+# ⚙️ Tech Stack
+
+### Frontend
+
+* React Native
+* Expo SDK 56
+* Expo Router
+* TypeScript
+* Reanimated
+
+### Backend
+
+* Node.js
+* Express
+
+### Authentication
+
+* Supabase Auth
+* Google OAuth
+* Email Authentication
+
+### AI
+
+* OpenAI GPT-4o
+* OpenAI Whisper
+* text-embedding-3-small
+
+### Database
+
+* Supabase
+* PostgreSQL
+
+### Podcast Sources
+
+* RSS Feeds
+* iTunes Search API
+
+---
+
+# 🌟 Vision
+
+Podex isn't trying to be another podcast player.
+
+It's building a memory layer for audio.
+
+A system that remembers:
+
+* Everything you've listened to
+* Every idea you've discovered
+* Every recommendation you've heard
+
+So that knowledge compounds over time instead of disappearing.
+
+---
+
+<div align="center">
+
+## 🎙️ Spotify plays podcasts.
+
+# 🧠 Podex remembers them.
+
+</div>
+```
