@@ -1,46 +1,47 @@
-````md
-<div align="center">
-
-<img src="./assets/logo.png" width="120" alt="Podex Logo" />
-
 # 🎙️ Podex
+
+<div align="center">
+  <img src="./assets/logo.png" width="120" alt="Podex Logo" />
 
 ### Spotify plays podcasts. Podex remembers them.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/React%20Native-Expo%20SDK%2056-000000?style=for-the-badge&logo=expo" />
-  <img src="https://img.shields.io/badge/OpenAI-GPT--4o-purple?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Supabase-Authentication-3ECF8E?style=for-the-badge&logo=supabase" />
-  <img src="https://img.shields.io/badge/TypeScript-Ready-blue?style=for-the-badge&logo=typescript" />
-</p>
-
-<p align="center">
-  Transform every podcast you listen to into a searchable personal knowledge base.
-</p>
+Transform every podcast you listen to into a searchable personal knowledge base.
 
 </div>
 
 ---
 
-## 🚀 The Problem
+## 🚀 What is Podex?
 
-People spend hundreds of hours listening to podcasts.
+Podex is an AI-powered podcast platform designed to help listeners retain and revisit the knowledge they consume.
 
-But a few days later they forget:
+Traditional podcast apps focus on playing audio.
 
-- 📚 Books that were recommended
-- 🧠 Frameworks that were explained
-- 📈 Statistics that were mentioned
-- 💡 Insights that inspired them
-- 🎙️ Quotes from guests
+Podex focuses on helping you remember what you've learned.
 
-Podcasts are full of valuable information, but traditional podcast apps treat them as disposable audio.
+Every episode can become searchable, chat-enabled, and connected to a personal knowledge system that grows over time.
 
 ---
 
-## ✨ The Solution
+## ❌ The Problem
 
-Podex turns passive podcast listening into an active knowledge system.
+People spend hundreds of hours listening to podcasts.
+
+Yet they quickly forget:
+
+* Books that were recommended
+* Frameworks that were explained
+* Statistics that were mentioned
+* Quotes from guests
+* Actionable advice and insights
+
+Podcasts contain enormous amounts of valuable information, but today's podcast players provide no effective way to retain it.
+
+---
+
+## ✅ The Solution
+
+Podex transforms passive listening into active knowledge acquisition.
 
 Instead of:
 
@@ -48,33 +49,29 @@ Instead of:
 Listen
 ↓
 Forget
-````
+```
 
-Podex becomes:
+Podex enables:
 
 ```text
 Listen
-↓
-Transcribe
 ↓
 Understand
 ↓
 Organize
 ↓
-Search Forever
+Search
+↓
+Remember
 ```
-
-Every episode becomes searchable, chat-enabled, and connected to your personal knowledge graph.
 
 ---
 
+## ✨ Features
 
+### 🎧 Podcast Discovery
 
-# 🎯 Features
-
-## 🎧 Podcast Discovery
-
-Discover and subscribe to podcasts from across the internet.
+Discover and subscribe to podcasts from across the web.
 
 * Search podcasts
 * Browse episodes
@@ -83,16 +80,15 @@ Discover and subscribe to podcasts from across the internet.
 
 ---
 
-## 🧠 Clip Brain
+### 🧠 Clip Brain
 
-Podex automatically extracts:
+Podex automatically extracts valuable information from episodes, including:
 
 * Books
 * Frameworks
-* Recommendations
 * Quotes
+* Recommendations
 * Statistics
-* Contrarian takes
 * Guest mentions
 * Key insights
 
@@ -100,47 +96,47 @@ Instead of re-listening to hours of audio, instantly access the moments that mat
 
 ---
 
-## 🔍 Search Your Listening History
+### 🔍 Search Everything You've Heard
 
-Ask questions like:
+Search across your entire listening history.
+
+Examples:
 
 ```text
 What books did Huberman recommend?
 
-Show all startup advice I've heard.
-
-Find mentions of AGI.
+Show every mention of AGI.
 
 What productivity frameworks were discussed?
-```
 
-Search across everything you've ever listened to.
+Find all startup advice I've heard.
+```
 
 ---
 
-## 💬 Talk To Any Episode
+### 💬 Talk To Any Episode
 
 Every episode becomes interactive.
 
-Examples:
+Ask questions such as:
 
 ```text
 Summarize this episode.
 
 What were the key takeaways?
 
-What books were mentioned?
+What books were recommended?
 
 What did they say about sleep?
 ```
 
-Answers are sourced directly from episode transcripts.
+Answers are grounded in the episode transcript.
 
 ---
 
-## 📚 Knowledge Library
+### 📚 Knowledge Library
 
-Your personal second brain for podcasts.
+Everything you've learned in one place.
 
 Store and revisit:
 
@@ -151,62 +147,46 @@ Store and revisit:
 * Recommendations
 * Insights
 
-All searchable.
-
-All organized.
-
-All yours.
+Your personal second brain for podcasts.
 
 ---
 
-## ⚔️ Debate Mode
+### ⚔️ Debate Mode
 
 Compare opposing viewpoints from different podcasters.
 
-Example:
+Examples:
 
-```text
-Huberman vs Peter Attia
+* Huberman vs Peter Attia
+* AI Optimists vs AI Skeptics
+* Different health and productivity philosophies
 
-Cold Exposure
-
-Benefits
-vs
-Criticisms
-```
-
-Understand both sides of complex topics.
+Understand multiple perspectives on important topics.
 
 ---
 
-## 🔬 Daily Investigation
+### 🔬 Daily Investigation
 
-Every day Podex generates a personalized research topic based on your listening history.
+Podex generates personalized research topics based on your listening history.
 
 Example:
 
 > Why do high performers prioritize sleep over productivity hacks?
 
-Podex gathers evidence across multiple podcasts and presents a structured investigation.
+Podex gathers evidence from multiple podcasts and presents a structured investigation.
 
 ---
 
-# 🏗️ How It Works
+## 🏗️ How It Works
 
 ```text
 Podcast Episode
         ↓
-OpenAI Whisper
+Transcription
         ↓
-Transcript
+AI Processing
         ↓
-Chunking
-        ↓
-Embeddings
-        ↓
-AI Analysis
-        ↓
-Clip Brain
+Knowledge Extraction
         ↓
 Search & Chat
         ↓
@@ -215,7 +195,7 @@ Personal Knowledge Base
 
 ---
 
-# ⚙️ Tech Stack
+## ⚙️ Tech Stack
 
 ### Frontend
 
@@ -223,7 +203,6 @@ Personal Knowledge Base
 * Expo SDK 56
 * Expo Router
 * TypeScript
-* Reanimated
 
 ### Backend
 
@@ -240,7 +219,7 @@ Personal Knowledge Base
 
 * OpenAI GPT-4o
 * OpenAI Whisper
-* text-embedding-3-small
+* OpenAI Embeddings
 
 ### Database
 
@@ -254,7 +233,7 @@ Personal Knowledge Base
 
 ---
 
-# 🌟 Vision
+## 🌟 Vision
 
 Podex isn't trying to be another podcast player.
 
@@ -266,7 +245,7 @@ A system that remembers:
 * Every idea you've discovered
 * Every recommendation you've heard
 
-So that knowledge compounds over time instead of disappearing.
+So knowledge compounds over time instead of disappearing.
 
 ---
 
@@ -277,4 +256,3 @@ So that knowledge compounds over time instead of disappearing.
 # 🧠 Podex remembers them.
 
 </div>
-```
